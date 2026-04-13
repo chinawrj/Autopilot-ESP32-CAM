@@ -27,3 +27,6 @@ __pycache__/
 # Keep defaults template
 !sdkconfig.defaults
 tools/heap_24h_log.txt
+.playwright-mcp/
+*.png
+test/build/

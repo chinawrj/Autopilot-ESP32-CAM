@@ -237,3 +237,20 @@
 - [x] 截图: v1.2.0-dashboard.png, v1.2.0-tcp-stream.png
 - [x] CHANGELOG.md + RELEASE_NOTES.md 更新
 - [x] GitHub Release v1.2.0
+
+### Day 22: 代码重构 + 单元测试覆盖
+- [x] 重构: 提取 FPS 计算器组件 (`components/fps_counter/`)
+  - [x] 纯结构体 API (fps_counter_t)，无全局变量
+  - [x] stream_server.c 和 ws_stream.c 消除重复代码
+- [x] 重构: 提取 JSON 响应辅助函数 (`main/http_helpers.c/h`)
+  - [x] http_send_json() 封装 5 处重复的 JSON 响应模式
+  - [x] http_server.c 减少 27 行代码
+- [x] 搭建 Unity 单元测试框架 (host-based)
+  - [x] test/CMakeLists.txt + mocks + redirect headers
+  - [x] Mac 上直接编译运行，无需 ESP32 硬件
+- [x] 编写核心模块单元测试: 20 tests, 0 failures
+  - [x] test_fps_counter (7 tests): 初始值、窗口、高帧率、重置
+  - [x] test_virtual_sensor (6 tests): 温度范围、随机值映射
+  - [x] test_led_controller (7 tests): GPIO mock、toggle、幂等性
+- [x] 上板验证: build ✅ flash ✅ serial ✅ browser ✅ (Patchright)
+- [x] Host 测试: ctest 20/20 pass
