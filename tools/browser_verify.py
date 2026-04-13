@@ -17,7 +17,7 @@ context = pw.chromium.launch_persistent_context(
 page = context.pages[0] if context.pages else context.new_page()
 
 # Navigate to WS stream page
-page.goto(f"http://{DEVICE_IP}/stream/udp", wait_until="domcontentloaded")
+page.goto(f"http://{DEVICE_IP}/stream/ws", wait_until="domcontentloaded")
 time.sleep(3)
 
 # Take screenshot

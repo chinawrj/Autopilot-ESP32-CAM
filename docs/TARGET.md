@@ -96,14 +96,14 @@
   - [x] httpd close callback 自动清理
   - [x] 控制消息: start/stop/quality (Day 8: set_quality, set_resolution, get_status)
   - [x] 心跳机制 (Day 8: 5s periodic heartbeat with fps/clients/heap)
-- [x] 前端 `/stream/udp` 页面 (Day 7)
+- [x] 前端 `/stream/ws` 页面 (Day 7)
   - [x] WebSocket 连接管理 + 自动重连
   - [x] Canvas 渲染 (Blob → Image → drawImage)
   - [x] HUD 叠加: FPS + 温度 + WS 状态
   - [x] LED 控制按钮
 - [x] TCP 和 WS 双路径并存不冲突 (Day 7 验证通过)
 
-**完成标志**: `/stream/tcp` 和 `/stream/udp` 都可独立访问 — ✅ Day 7 验证通过
+**完成标志**: `/stream/tcp` 和 `/stream/ws` 都可独立访问 — ✅ Day 7 验证通过
 
 ---
 

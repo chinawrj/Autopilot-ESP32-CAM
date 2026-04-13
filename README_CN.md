@@ -39,13 +39,47 @@
 | **板载 LED** | GPIO33 |
 | **串口芯片** | CH340 |
 
+### GPIO 引脚定义
+
+#### 摄像头 (OV2640)
+
+| 信号 | GPIO | 信号 | GPIO |
+|------|------|------|------|
+| D0 | 5 | D4 | 36 (仅输入) |
+| D1 | 18 | D5 | 39 (仅输入) |
+| D2 | 19 | D6 | 34 (仅输入) |
+| D3 | 21 | D7 | 35 (仅输入) |
+| XCLK | 0 | PCLK | 22 |
+| VSYNC | 25 | HREF | 23 |
+| SDA (SIOD) | 26 | SCL (SIOC) | 27 |
+| PWDN | 32 | RESET | -1 (无) |
+
+#### SD 卡
+
+| 信号 | GPIO | 信号 | GPIO |
+|------|------|------|------|
+| CLK | 14 | DATA0 | 2 |
+| CMD | 15 | DATA1 | 4 |
+| DATA2 | 12 ⚠️ | DATA3 | 13 |
+
+#### 其他引脚
+
+| 功能 | GPIO | 备注 |
+|------|------|------|
+| 板载 LED | 33 | 低电平有效 |
+| BOOT 按键 | 0 | 与 XCLK 共用 |
+| U0TXD | 1 | 串口 TX |
+| U0RXD | 3 | 串口 RX |
+
+> **关键冲突：** GPIO0 = XCLK + BOOT（烧录时需断开摄像头）· GPIO4 = Flash LED + SD DAT1 · GPIO12 = SD DAT2 + MTDI（需执行 `espefuse.py set_flash_voltage 3.3V`）· GPIO34-39 仅支持输入。
+
 ## 系统架构
 
 ```mermaid
 graph TB
     subgraph Browser["🌐 浏览器客户端"]
         A1["📺 MJPEG 页面<br/>index.html"]
-        A2["📺 WebSocket 页面<br/>stream_udp.html"]
+        A2["📺 WebSocket 页面<br/>stream_ws.html"]
     end
 
     subgraph ESP["⚡ ESP32-CAM"]
@@ -137,7 +171,7 @@ I (2630) main: System ready — http://192.168.1.171/
 | 页面 | URL | 说明 |
 |------|-----|------|
 | MJPEG 视频流 | `http://<IP>/` | TCP MJPEG 视频 + HUD |
-| WebSocket 视频流 | `http://<IP>/stream/udp` | WebSocket 视频 + 控制面板 |
+| WebSocket 视频流 | `http://<IP>/stream/ws` | WebSocket 视频 + 控制面板 |
 | 状态 API | `http://<IP>/api/status` | JSON: fps, temperature, heap 等 |
 | LED 控制 | `POST http://<IP>/api/led` | Body: `{"state":"on/off/toggle"}` |
 
@@ -229,7 +263,7 @@ curl -X POST http://192.168.1.171/api/led -d '{"state":"off"}'
 │   ├── ws_stream.c/h       # WebSocket 视频流 + 控制消息
 │   ├── led_controller.c/h  # GPIO33 LED 驱动
 │   ├── index.html          # MJPEG 视频流前端页面
-│   └── stream_udp.html     # WebSocket 视频流前端页面
+│   └── stream_ws.html      # WebSocket 视频流前端页面
 ├── components/
 │   └── virtual_sensor/     # 虚拟温度传感器组件
 ├── tools/

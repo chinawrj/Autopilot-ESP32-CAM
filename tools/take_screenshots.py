@@ -41,9 +41,9 @@ try:
     take_screenshot(context, f"http://{DEVICE_IP}/", path1, wait_secs=5)
 
     # Screenshot 2: WebSocket stream page
-    print(f"[2/4] Opening WebSocket page: http://{DEVICE_IP}/stream/udp")
+    print(f"[2/4] Opening WebSocket page: http://{DEVICE_IP}/stream/ws")
     path2 = os.path.join(SCREENSHOT_DIR, "ws-stream.png")
-    take_screenshot(context, f"http://{DEVICE_IP}/stream/udp", path2, wait_secs=5)
+    take_screenshot(context, f"http://{DEVICE_IP}/stream/ws", path2, wait_secs=5)
 
     # Screenshot 3: LED ON state
     print("[3/4] Toggling LED ON for screenshot...")

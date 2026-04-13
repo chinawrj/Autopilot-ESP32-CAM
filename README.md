@@ -39,13 +39,47 @@ A real-time camera web server built on the **YD-ESP32-CAM** (ESP32-WROVER-E-N8R8
 | **Onboard LED** | GPIO33 |
 | **Serial Chip** | CH340 |
 
+### GPIO Pinout
+
+#### Camera (OV2640)
+
+| Signal | GPIO | Signal | GPIO |
+|--------|------|--------|------|
+| D0 | 5 | D4 | 36 (input-only) |
+| D1 | 18 | D5 | 39 (input-only) |
+| D2 | 19 | D6 | 34 (input-only) |
+| D3 | 21 | D7 | 35 (input-only) |
+| XCLK | 0 | PCLK | 22 |
+| VSYNC | 25 | HREF | 23 |
+| SDA (SIOD) | 26 | SCL (SIOC) | 27 |
+| PWDN | 32 | RESET | -1 (N/A) |
+
+#### SD Card
+
+| Signal | GPIO | Signal | GPIO |
+|--------|------|--------|------|
+| CLK | 14 | DATA0 | 2 |
+| CMD | 15 | DATA1 | 4 |
+| DATA2 | 12 ⚠️ | DATA3 | 13 |
+
+#### Other
+
+| Function | GPIO | Note |
+|----------|------|------|
+| Onboard LED | 33 | Active LOW |
+| BOOT Button | 0 | Shared with XCLK |
+| U0TXD | 1 | Serial TX |
+| U0RXD | 3 | Serial RX |
+
+> **Key Conflicts:** GPIO0 = XCLK + BOOT (disconnect camera for flashing) · GPIO4 = Flash LED + SD DAT1 · GPIO12 = SD DAT2 + MTDI (run `espefuse.py set_flash_voltage 3.3V`) · GPIO34-39 are input-only.
+
 ## Architecture
 
 ```mermaid
 graph TB
     subgraph Browser["🌐 Browser Client"]
         A1["📺 MJPEG Page<br/>index.html"]
-        A2["📺 WebSocket Page<br/>stream_udp.html"]
+        A2["📺 WebSocket Page<br/>stream_ws.html"]
     end
 
     subgraph ESP["⚡ ESP32-CAM"]
@@ -137,7 +171,7 @@ I (2630) main: System ready — http://192.168.1.171/
 | Page | URL | Description |
 |------|-----|-------------|
 | MJPEG Stream | `http://<IP>/` | TCP MJPEG video + HUD |
-| WebSocket Stream | `http://<IP>/stream/udp` | WebSocket video + control panel |
+| WebSocket Stream | `http://<IP>/stream/ws` | WebSocket video + control panel |
 | Status API | `http://<IP>/api/status` | JSON: fps, temperature, heap, etc. |
 | LED Control | `POST http://<IP>/api/led` | Body: `{"state":"on/off/toggle"}` |
 
@@ -229,7 +263,7 @@ curl -X POST http://192.168.1.171/api/led -d '{"state":"off"}'
 │   ├── ws_stream.c/h       # WebSocket video stream + control
 │   ├── led_controller.c/h  # GPIO33 LED driver
 │   ├── index.html          # MJPEG stream frontend
-│   └── stream_udp.html     # WebSocket stream frontend
+│   └── stream_ws.html      # WebSocket stream frontend
 ├── components/
 │   └── virtual_sensor/     # Virtual temperature sensor component
 ├── tools/

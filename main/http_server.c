@@ -48,8 +48,8 @@ float http_server_get_fps(void)
 extern const char index_html_start[] asm("_binary_index_html_start");
 extern const char index_html_end[]   asm("_binary_index_html_end");
 
-extern const char stream_udp_html_start[] asm("_binary_stream_udp_html_start");
-extern const char stream_udp_html_end[]   asm("_binary_stream_udp_html_end");
+extern const char stream_ws_html_start[] asm("_binary_stream_ws_html_start");
+extern const char stream_ws_html_end[]   asm("_binary_stream_ws_html_end");
 
 static esp_err_t index_handler(httpd_req_t *req)
 {
@@ -58,11 +58,11 @@ static esp_err_t index_handler(httpd_req_t *req)
     return httpd_resp_send(req, index_html_start, len);
 }
 
-static esp_err_t stream_udp_page_handler(httpd_req_t *req)
+static esp_err_t stream_ws_page_handler(httpd_req_t *req)
 {
-    size_t len = stream_udp_html_end - stream_udp_html_start;
+    size_t len = stream_ws_html_end - stream_ws_html_start;
     httpd_resp_set_type(req, "text/html");
-    return httpd_resp_send(req, stream_udp_html_start, len);
+    return httpd_resp_send(req, stream_ws_html_start, len);
 }
 
 static void httpd_close_fn(httpd_handle_t hd, int fd)
@@ -203,7 +203,7 @@ esp_err_t http_server_start(void)
     httpd_register_uri_handler(server, &(httpd_uri_t){
         .uri = "/api/led", .method = HTTP_POST, .handler = led_handler});
     httpd_register_uri_handler(server, &(httpd_uri_t){
-        .uri = "/stream/udp", .method = HTTP_GET, .handler = stream_udp_page_handler});
+        .uri = "/stream/ws", .method = HTTP_GET, .handler = stream_ws_page_handler});
     httpd_register_uri_handler(server, &(httpd_uri_t){
         .uri = "/ws/stream", .method = HTTP_GET, .handler = ws_stream_handler,
         .is_websocket = true});

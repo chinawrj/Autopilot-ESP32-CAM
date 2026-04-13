@@ -7,5 +7,5 @@ idf_component_register(
          "ws_stream.c"
     INCLUDE_DIRS "."
     EMBED_FILES "index.html"
-                "stream_udp.html"
+                "stream_ws.html"
 )
