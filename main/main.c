@@ -6,13 +6,14 @@
 #include "http_server.h"
 #include "led_controller.h"
 #include "virtual_sensor.h"
+#include "ws_stream.h"
 
 static const char *TAG = "main";
 
 void app_main(void)
 {
     ESP_LOGI(TAG, "=== Autopilot ESP32-CAM ===");
-    ESP_LOGI(TAG, "Firmware version: 0.3.0 (M2 HUD)");
+    ESP_LOGI(TAG, "Firmware version: 0.4.0 (M4 WS Stream)");
 
     /* Initialize WiFi and connect */
     esp_err_t ret = wifi_manager_init();
@@ -38,6 +39,13 @@ void app_main(void)
 
     /* Initialize virtual temperature sensor */
     virtual_sensor_init();
+
+    /* Initialize WebSocket stream subsystem */
+    ret = ws_stream_init();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "WS stream initialization failed");
+        return;
+    }
 
     /* Start HTTP server */
     ret = http_server_start();

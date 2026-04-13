@@ -4,6 +4,8 @@ idf_component_register(
          "camera_init.c"
          "http_server.c"
          "led_controller.c"
+         "ws_stream.c"
     INCLUDE_DIRS "."
     EMBED_FILES "index.html"
+                "stream_udp.html"
 )

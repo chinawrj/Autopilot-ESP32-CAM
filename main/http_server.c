@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <sys/time.h>
+#include <unistd.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_http_server.h"
@@ -11,6 +12,7 @@
 #include "esp_timer.h"
 #include "virtual_sensor.h"
 #include "led_controller.h"
+#include "ws_stream.h"
 #include "cJSON.h"
 
 static const char *TAG = "httpd";
@@ -47,11 +49,31 @@ float http_server_get_fps(void)
 extern const char index_html_start[] asm("_binary_index_html_start");
 extern const char index_html_end[]   asm("_binary_index_html_end");
 
+extern const char stream_udp_html_start[] asm("_binary_stream_udp_html_start");
+extern const char stream_udp_html_end[]   asm("_binary_stream_udp_html_end");
+
 static esp_err_t index_handler(httpd_req_t *req)
 {
     size_t len = index_html_end - index_html_start;
     httpd_resp_set_type(req, "text/html");
     return httpd_resp_send(req, index_html_start, len);
+}
+
+/* --- GET /stream/udp page handler --- */
+
+static esp_err_t stream_udp_page_handler(httpd_req_t *req)
+{
+    size_t len = stream_udp_html_end - stream_udp_html_start;
+    httpd_resp_set_type(req, "text/html");
+    return httpd_resp_send(req, stream_udp_html_start, len);
+}
+
+/* --- httpd close callback --- */
+
+static void httpd_close_fn(httpd_handle_t hd, int fd)
+{
+    ws_stream_on_close(fd);
+    close(fd);
 }
 
 /* --- MJPEG stream handler --- */
@@ -163,9 +185,11 @@ static esp_err_t led_handler(httpd_req_t *req)
 esp_err_t http_server_start(void)
 {
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-    config.max_uri_handlers = 8;
+    config.max_uri_handlers = 10;
     config.stack_size = 8192;
     config.server_port = 80;
+    config.close_fn = httpd_close_fn;
+    config.lru_purge_enable = true;
 
     httpd_handle_t server = NULL;
     esp_err_t err = httpd_start(&server, &config);
@@ -205,6 +229,23 @@ esp_err_t http_server_start(void)
         .handler  = led_handler,
     };
     httpd_register_uri_handler(server, &led_uri);
+
+    /* GET /stream/udp (page) */
+    httpd_uri_t stream_udp_page_uri = {
+        .uri      = "/stream/udp",
+        .method   = HTTP_GET,
+        .handler  = stream_udp_page_handler,
+    };
+    httpd_register_uri_handler(server, &stream_udp_page_uri);
+
+    /* WS /ws/stream (WebSocket video stream) */
+    httpd_uri_t ws_stream_uri = {
+        .uri          = "/ws/stream",
+        .method       = HTTP_GET,
+        .handler      = ws_stream_handler,
+        .is_websocket = true,
+    };
+    httpd_register_uri_handler(server, &ws_stream_uri);
 
     ESP_LOGI(TAG, "HTTP server started on port %d", config.server_port);
     return ESP_OK;

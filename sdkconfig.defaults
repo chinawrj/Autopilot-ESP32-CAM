@@ -31,6 +31,9 @@ CONFIG_LOG_DEFAULT_LEVEL_INFO=y
 # --- Task watchdog ---
 CONFIG_ESP_TASK_WDT_TIMEOUT_S=10
 
+# --- HTTP server WebSocket support ---
+CONFIG_HTTPD_WS_SUPPORT=y
+
 # --- Camera (for future use) ---
 # XCLK frequency
 # CONFIG_XCLK_FREQ=20000000

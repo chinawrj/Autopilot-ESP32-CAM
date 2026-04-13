@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ESP32-CAM — WebSocket Stream</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    background: #1a1a2e;
+    color: #eee;
+    font-family: 'Courier New', monospace;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+}
+h1 { margin: 12px 0 4px; font-size: 1.2em; color: #0ff; letter-spacing: 2px; }
+.nav { margin: 4px 0 8px; font-size: 12px; }
+.nav a { color: #0ff; text-decoration: none; }
+.nav a:hover { text-decoration: underline; }
+.stream-container {
+    position: relative;
+    display: inline-block;
+    border: 2px solid #0ff;
+    border-radius: 4px;
+    overflow: hidden;
+}
+canvas { display: block; background: #000; max-width: 90vw; max-height: 70vh; }
+.hud {
+    position: absolute; top: 0; left: 0; right: 0;
+    display: flex; justify-content: space-between;
+    padding: 6px 12px;
+    background: rgba(0,0,0,0.6);
+    font-size: 14px; color: #0f0;
+    pointer-events: none;
+}
+.hud span { margin: 0 8px; }
+.controls { margin: 12px 0; display: flex; gap: 12px; align-items: center; }
+.led-btn {
+    padding: 8px 20px; font-size: 14px;
+    border: 2px solid #555; border-radius: 4px;
+    background: #333; color: #eee;
+    cursor: pointer; transition: all 0.2s;
+}
+.led-btn.on { border-color: #0f0; color: #0f0; }
+.led-btn.off { border-color: #f00; color: #f00; }
+.status-bar { font-size: 12px; color: #888; margin-top: 8px; }
+</style>
+</head>
+<body>
+<h1>ESP32-CAM — WebSocket Stream</h1>
+<div class="nav"><a href="/">&larr; TCP Stream (MJPEG)</a></div>
+<div class="stream-container">
+    <canvas id="canvas" width="640" height="480"></canvas>
+    <div class="hud">
+        <span id="hud-fps">FPS: --</span>
+        <span id="hud-temp">TEMP: --.--&deg;C</span>
+        <span id="hud-ws">WS: connecting</span>
+    </div>
+</div>
+<div class="controls">
+    <button id="led-btn" class="led-btn off" onclick="toggleLed()">&#x1F534; LED OFF</button>
+</div>
+<div class="status-bar" id="status">Connecting WebSocket...</div>
+
+<script>
+var canvas = document.getElementById('canvas');
+var ctx = canvas.getContext('2d');
+var ws = null;
+var frameCount = 0;
+var lastFpsTime = Date.now();
+var clientFps = 0;
+
+function connectWs() {
+    var url = 'ws://' + location.host + '/ws/stream';
+    ws = new WebSocket(url);
+    ws.binaryType = 'arraybuffer';
+
+    ws.onopen = function() {
+        document.getElementById('hud-ws').textContent = 'WS: connected';
+        document.getElementById('status').textContent = 'WebSocket connected';
+    };
+
+    ws.onmessage = function(evt) {
+        if (evt.data instanceof ArrayBuffer) {
+            var blob = new Blob([evt.data], {type: 'image/jpeg'});
+            var url = URL.createObjectURL(blob);
+            var img = new Image();
+            img.onload = function() {
+                if (canvas.width !== img.width || canvas.height !== img.height) {
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                }
+                ctx.drawImage(img, 0, 0);
+                URL.revokeObjectURL(url);
+                frameCount++;
+            };
+            img.src = url;
+        }
+    };
+
+    ws.onerror = function() {
+        document.getElementById('hud-ws').textContent = 'WS: error';
+    };
+
+    ws.onclose = function() {
+        document.getElementById('hud-ws').textContent = 'WS: disconnected';
+        document.getElementById('status').textContent = 'Reconnecting in 2s...';
+        setTimeout(connectWs, 2000);
+    };
+}
+
+function updateFps() {
+    var now = Date.now();
+    var elapsed = now - lastFpsTime;
+    if (elapsed >= 1000) {
+        clientFps = frameCount * 1000 / elapsed;
+        frameCount = 0;
+        lastFpsTime = now;
+    }
+    document.getElementById('hud-fps').textContent = 'FPS: ' + clientFps.toFixed(1);
+}
+
+function updateStatus() {
+    fetch('/api/status')
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            document.getElementById('hud-temp').innerHTML =
+                'TEMP: ' + d.temperature.toFixed(1) + '&deg;C';
+            var btn = document.getElementById('led-btn');
+            if (d.led_state) {
+                btn.className = 'led-btn on';
+                btn.innerHTML = '&#x1F7E2; LED ON';
+            } else {
+                btn.className = 'led-btn off';
+                btn.innerHTML = '&#x1F534; LED OFF';
+            }
+        })
+        .catch(function() {});
+}
+
+function toggleLed() {
+    fetch('/api/led', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({state: 'toggle'})
+    }).then(function() { updateStatus(); }).catch(function() {});
+}
+
+connectWs();
+setInterval(updateFps, 500);
+setInterval(updateStatus, 1000);
+updateStatus();
+</script>
+</body>
+</html>
