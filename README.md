@@ -30,6 +30,8 @@ A real-time camera web server built on the **YD-ESP32-CAM** (ESP32-WROVER-E-N8R8
 | **Unified Dashboard** | Single-page UI with tab switching (TCP / WebSocket), all controls on one page |
 | **Heartbeat** | 5-second periodic heartbeat with FPS, client count, and heap memory stats |
 | **WiFi Auto-Reconnect** | Exponential backoff reconnection (1s → 10s), infinite retry after initial connect |
+| **mDNS Discovery** | Access via `http://espcam.local/` — no need to remember IP addresses |
+| **Camera Settings** | Real-time camera parameter adjustment (brightness, contrast, saturation, mirror, flip) via `/api/camera` |
 | **Heap Monitoring** | `/api/status` returns real-time heap info with RSSI, uptime; 30s serial logging |
 
 ## Hardware
@@ -267,6 +269,23 @@ curl -o snapshot.jpg http://192.168.1.171/api/snapshot
 curl -X POST http://192.168.1.171/api/ota -d '{"url":"http://192.168.1.100:8070/firmware.bin"}'
 ```
 
+### GET `/api/camera`
+
+Returns current camera sensor settings.
+
+```json
+{"brightness": 0, "contrast": 0, "saturation": 0, "sharpness": 0,
+ "hmirror": false, "vflip": false, "quality": 12, "framesize": 10}
+```
+
+### POST `/api/camera`
+
+Update camera settings (partial JSON accepted — send only changed fields).
+
+```bash
+curl -X POST http://192.168.1.171/api/camera -d '{"brightness":1,"vflip":true}'
+```
+
 ### GET `/api/ota/status`
 
 ```json
@@ -354,6 +373,7 @@ The human's role was limited to: connecting the hardware, providing WiFi credent
 | Release v1.1.0 | Day 18 | Dual server architecture + OTA + unified UI |
 | Quality Audit | Day 19 | 130/130 tests passed, port 81→8081 fix |
 | Release v1.1.1 | Day 20 | Documentation refresh + patch release |
+| Release v1.2.0 | Day 21 | mDNS discovery + Camera Settings API |
 
 Every code change was build → flash → serial verify → browser verify on real hardware. See [docs/daily-logs/](docs/daily-logs/) for detailed development logs.
 

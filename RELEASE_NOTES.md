@@ -1,31 +1,54 @@
-# v1.1.1 — Patch Release | 补丁发布
+# v1.2.0 — mDNS Discovery + Camera Settings | mDNS 发现 + 摄像头设置
 
-## Autopilot ESP32-CAM v1.1.1
+## Autopilot ESP32-CAM v1.2.0
 
-Patch release with documentation refresh and port fix. All documentation now accurately reflects the v1.1.x dual-server architecture.
+New features: mDNS local network discovery and real-time camera parameter adjustment.
 
-补丁发布：文档全面刷新 + 端口修复。所有文档现已准确反映 v1.1.x 双服务器架构。
+新功能：mDNS 局域网发现和实时摄像头参数调节。
 
 ---
 
-## 🐛 Bug Fixes | 修复
+## ✨ New Features | 新功能
 
-- **MJPEG stream port 81 → 8081** — Avoids transparent HTTP proxy interception on low ports (discovered during Day 19 quality audit, 130/130 tests passed)
+### mDNS Local Discovery | mDNS 局域网发现
 
-## 📝 Documentation | 文档
+Access your ESP32-CAM via `http://espcam.local/` — no need to remember IP addresses.
 
-- **README overhaul** — Both EN/CN README updated to match v1.1.x reality:
-  - Architecture: dual HTTP server (:80 API + :8081 MJPEG stream)
-  - Features: +OTA firmware update, +Snapshot API, +Unified Dashboard, +System Info
-  - API Reference: +`/api/snapshot`, +`/api/ota`, +`/api/ota/status`
-  - Project structure: +`stream_server.c/h`, +`ota_update.c/h`, +QA test tools
-  - Performance: ~1300 lines / 9 source files, dual OTA partition layout
-  - Milestone timeline: added v1.1.0 through v1.1.1
+通过 `http://espcam.local/` 访问你的 ESP32-CAM — 无需记住 IP 地址。
 
-## 🧪 QA Tools | 测试工具
+- Uses `espressif/mdns` managed component v1.11.0
+- Socket-based networking for better compatibility
+- Hostname: `espcam`, advertises `_http._tcp` service on port 80
+- Note: Requires router to allow WiFi multicast between clients
 
-- `tools/quality_audit.py` — 80-item API test suite (curl-based)
-- `tools/browser_qa.py` — 50-item browser UI test suite (Patchright Chrome)
+### Camera Settings API | 摄像头设置 API
+
+Real-time camera parameter adjustment via REST API and dashboard UI.
+
+通过 REST API 和仪表盘界面实时调节摄像头参数。
+
+- **`GET /api/camera`** — Returns current camera settings as JSON
+- **`POST /api/camera`** — Update settings with partial JSON (only send changed fields)
+- Parameters: `brightness`, `contrast`, `saturation`, `sharpness` (-2 to 2)
+- Toggles: `hmirror`, `vflip` (true/false)
+- Read-only: `quality`, `framesize`
+
+### Camera Settings UI Panel | 摄像头设置面板
+
+- Collapsible panel on the unified dashboard
+- Range sliders for image adjustments
+- Checkboxes for mirror/flip
+- Changes applied instantly to camera sensor
+
+---
+
+## 📊 Verified | 已验证
+
+- ✅ Build: 0 warnings
+- ✅ Flash + Serial: v1.2.0 boot, mDNS started, all services OK
+- ✅ API: `/api/status` (version 1.2.0), `/api/camera` GET + POST
+- ✅ Browser: Dashboard with Camera Settings panel visible
+- ✅ mDNS responder: Unicast query returns correct IP
 
 ---
 

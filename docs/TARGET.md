@@ -150,10 +150,11 @@
 | Release v1.0.0 | ✅ | 100% |
 | M6 v1.1.0 新功能 | ✅ | 100% |
 | Release v1.1.1 | ✅ | 100% |
+| Release v1.2.0 | ✅ | 100% |
 
-**当前工作日**: Day 20
-**当前固件版本**: v1.1.1
-**状态**: v1.1.1 补丁发布 — 文档全面更新，与实际代码一致
+**当前工作日**: Day 21
+**当前固件版本**: v1.2.0
+**状态**: v1.2.0 发布 — mDNS 发现 + 摄像头参数调节
 
 ---
 
@@ -211,3 +212,28 @@
 - [x] RELEASE_NOTES.md 更新为 v1.1.1
 - [x] 固件版本号 1.1.0 → 1.1.1
 - [x] GitHub Release v1.1.1
+
+---
+
+## v1.2.0 Release（Day 21）
+
+### Day 21: mDNS + Camera Settings API + 发布 v1.2.0
+- [x] mDNS 本地发现: `http://espcam.local/`
+  - [x] espressif/mdns 1.11.0 managed component
+  - [x] Socket 网络模式 (CONFIG_MDNS_NETWORKING_SOCKET=y)
+  - [x] 修复: WiFi GOT_IP 事件竞争 → 手动 mdns_netif_action
+  - [x] 验证: ESP32 mDNS 响应器工作 (unicast 查询验证通过)
+  - [x] 注意: 多播发现依赖路由器允许 WiFi 客户端间多播
+- [x] Camera Settings API: GET/POST `/api/camera`
+  - [x] 支持: brightness, contrast, saturation, sharpness (-2~2)
+  - [x] 支持: hmirror, vflip (bool)
+  - [x] 部分 JSON 更新 (只发改动字段)
+  - [x] curl + 串口 + 浏览器全链路验证
+- [x] 前端: Camera Settings 面板 (可折叠)
+  - [x] Range sliders + Checkboxes
+  - [x] 实时摄像头参数调节
+- [x] 固件版本号 1.1.1 → 1.2.0
+- [x] 上板验证: build ✅ flash ✅ serial ✅ curl ✅ browser ✅
+- [x] 截图: v1.2.0-dashboard.png, v1.2.0-tcp-stream.png
+- [x] CHANGELOG.md + RELEASE_NOTES.md 更新
+- [x] GitHub Release v1.2.0

@@ -30,6 +30,8 @@
 | **统一仪表盘** | 单页面 UI，TCP / WebSocket 标签切换，所有控制集于一页 |
 | **心跳机制** | 5 秒周期心跳，推送 FPS、客户端数、堆内存等状态 |
 | **WiFi 自动重连** | 断线后指数退避无限重连 (1s → 10s) |
+| **mDNS 发现** | 通过 `http://espcam.local/` 访问设备 — 无需记住 IP 地址 |
+| **摄像头设置** | 实时调节摄像头参数（亮度、对比度、饱和度、镜像、翻转）via `/api/camera` |
 | **堆内存监控** | `/api/status` 返回实时堆内存、RSSI、运行时间信息，每 30s 串口日志输出 |
 
 ## 硬件参数
@@ -267,6 +269,23 @@ curl -o snapshot.jpg http://192.168.1.171/api/snapshot
 curl -X POST http://192.168.1.171/api/ota -d '{"url":"http://192.168.1.100:8070/firmware.bin"}'
 ```
 
+### GET `/api/camera`
+
+返回当前摄像头传感器设置。
+
+```json
+{"brightness": 0, "contrast": 0, "saturation": 0, "sharpness": 0,
+ "hmirror": false, "vflip": false, "quality": 12, "framesize": 10}
+```
+
+### POST `/api/camera`
+
+更新摄像头设置（支持部分 JSON — 只发送需要修改的字段）。
+
+```bash
+curl -X POST http://192.168.1.171/api/camera -d '{"brightness":1,"vflip":true}'
+```
+
 ### GET `/api/ota/status`
 
 ```json
@@ -354,6 +373,7 @@ curl -X POST http://192.168.1.171/api/ota -d '{"url":"http://192.168.1.100:8070/
 | Release v1.1.0 | Day 18 | 双服务器架构 + OTA + 统一 UI |
 | 质量审计 | Day 19 | 130/130 测试通过，端口 81→8081 修复 |
 | Release v1.1.1 | Day 20 | 文档刷新 + 补丁发布 |
+| Release v1.2.0 | Day 21 | mDNS 发现 + 摄像头设置 API |
 
 每次代码变更都经过完整的 编译 → 烧录 → 串口验证 → 浏览器验证 循环。详细日志见 [docs/daily-logs/](docs/daily-logs/)。
 

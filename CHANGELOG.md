@@ -2,6 +2,35 @@
 
 All notable changes to Autopilot ESP32-CAM are documented in this file.
 
+## [v1.2.0] — 2026-04-13
+
+### ✨ New Features
+
+- **mDNS local discovery** — Access the device via `http://espcam.local/` without remembering the IP address
+  - Uses `espressif/mdns` managed component v1.11.0
+  - Socket-based networking mode for better compatibility
+  - Hostname: `espcam`, service: `_http._tcp` on port 80
+  - Note: Multicast discovery requires router to allow WiFi client-to-client multicast
+
+- **Camera Settings API** — Adjust camera parameters in real-time via `GET/POST /api/camera`
+  - Brightness, contrast, saturation, sharpness (-2 to 2)
+  - Horizontal mirror, vertical flip (on/off)
+  - Quality and framesize (read via GET)
+  - Supports partial JSON updates (send only changed fields)
+
+- **Camera Settings UI panel** — Collapsible panel on the dashboard
+  - Range sliders for brightness, contrast, saturation, sharpness
+  - Checkboxes for horizontal mirror and vertical flip
+  - Settings applied instantly to the camera sensor
+
+### 🔧 Technical
+
+- mDNS initialized after WiFi with manual `mdns_netif_action()` to handle GOT_IP event race
+- `max_uri_handlers` bumped from 14 to 16 to accommodate new routes
+- Added `esp_netif.h` include for netif handle lookup
+
+---
+
 ## [v1.1.1] — 2026-04-14
 
 ### 🐛 Bug Fixes
