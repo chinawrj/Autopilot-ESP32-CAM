@@ -145,10 +145,10 @@
 | M1 TCP流 | ✅ | 100% |
 | M2 HUD | ✅ | 100% |
 | M3 LED | ✅ | 100% |
-| M4 UDP流 | ✅ | 100% |
+| M4 WS流 | ✅ | 100% |
 | M5 稳定性 | ✅ | 100% |
 | Release 准备 | ✅ | 100% |
 
-**当前工作日**: Day 13
+**当前工作日**: Day 14
 **当前固件版本**: v1.0.0
-**状态**: 🎉 v1.0.0 正式发布 — https://github.com/chinawrj/Autopilot-ESP32-CAM/releases/tag/v1.0.0
+**状态**: 客户反馈修复 — /stream/udp 重命名为 /stream/ws + GPIO 引脚文档
