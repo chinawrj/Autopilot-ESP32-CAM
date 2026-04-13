@@ -58,16 +58,29 @@ esp_err_t camera_init(void)
 
     esp_err_t err;
 
-    /* Power-cycle the camera via PWDN pin to ensure clean state after OTA reboot */
+    /* Power-cycle the camera via PWDN pin to ensure clean state after OTA reboot.
+     * Extended delays needed because OTA soft-reboot doesn't fully reset camera. */
     gpio_config_t io_conf = {
         .pin_bit_mask = (1ULL << CAM_PIN_PWDN),
         .mode = GPIO_MODE_OUTPUT,
     };
     gpio_config(&io_conf);
     gpio_set_level(CAM_PIN_PWDN, 1);   /* PWDN HIGH = power down */
-    vTaskDelay(pdMS_TO_TICKS(100));
+    vTaskDelay(pdMS_TO_TICKS(500));
+
+    /* Also reset I2C (SCCB) pins to avoid bus stuck after OTA soft-reboot */
+    gpio_config_t sccb_conf = {
+        .pin_bit_mask = (1ULL << CAM_PIN_SIOD) | (1ULL << CAM_PIN_SIOC),
+        .mode = GPIO_MODE_OUTPUT,
+    };
+    gpio_config(&sccb_conf);
+    gpio_set_level(CAM_PIN_SIOD, 1);
+    gpio_set_level(CAM_PIN_SIOC, 1);
+    vTaskDelay(pdMS_TO_TICKS(50));
+
     gpio_set_level(CAM_PIN_PWDN, 0);   /* PWDN LOW = power up */
-    vTaskDelay(pdMS_TO_TICKS(100));
+    vTaskDelay(pdMS_TO_TICKS(500));
+    ESP_LOGI(TAG, "Camera power-cycled (PWDN 500ms + I2C reset)");
 
     err = esp_camera_init(&config);
     if (err != ESP_OK) {
