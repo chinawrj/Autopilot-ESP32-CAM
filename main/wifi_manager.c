@@ -129,6 +129,14 @@ bool wifi_manager_is_connected(void)
     return s_is_connected;
 }
 
+int8_t wifi_manager_get_rssi(void)
+{
+    if (!s_is_connected) return 0;
+    wifi_ap_record_t ap;
+    if (esp_wifi_sta_get_ap_info(&ap) == ESP_OK) return ap.rssi;
+    return 0;
+}
+
 void wifi_manager_disconnect(void)
 {
     ESP_LOGW(TAG, "Forced WiFi disconnect (debug)");

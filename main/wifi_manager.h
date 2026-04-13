@@ -24,6 +24,12 @@ const char *wifi_manager_get_ip(void);
 bool wifi_manager_is_connected(void);
 
 /**
+ * Get current WiFi RSSI (signal strength in dBm).
+ * Returns 0 if not connected.
+ */
+int8_t wifi_manager_get_rssi(void);
+
+/**
  * Force disconnect WiFi (for testing reconnect logic).
  */
 void wifi_manager_disconnect(void);

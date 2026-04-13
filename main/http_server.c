@@ -13,7 +13,6 @@
 #include "ws_stream.h"
 #include "cJSON.h"
 #include "esp_system.h"
-
 #include "wifi_manager.h"
 #include "ota_update.h"
 
@@ -54,16 +53,14 @@ extern const char stream_ws_html_end[]   asm("_binary_stream_ws_html_end");
 
 static esp_err_t index_handler(httpd_req_t *req)
 {
-    size_t len = index_html_end - index_html_start;
     httpd_resp_set_type(req, "text/html");
-    return httpd_resp_send(req, index_html_start, len);
+    return httpd_resp_send(req, index_html_start, index_html_end - index_html_start);
 }
 
 static esp_err_t stream_ws_page_handler(httpd_req_t *req)
 {
-    size_t len = stream_ws_html_end - stream_ws_html_start;
     httpd_resp_set_type(req, "text/html");
-    return httpd_resp_send(req, stream_ws_html_start, len);
+    return httpd_resp_send(req, stream_ws_html_start, stream_ws_html_end - stream_ws_html_start);
 }
 
 static void httpd_close_fn(httpd_handle_t hd, int fd)
@@ -111,6 +108,21 @@ static esp_err_t stream_tcp_handler(httpd_req_t *req)
     return ESP_OK;  /* Client disconnect is normal, not an error */
 }
 
+static esp_err_t snapshot_handler(httpd_req_t *req)
+{
+    camera_fb_t *fb = esp_camera_fb_get();
+    if (!fb) {
+        httpd_resp_send_500(req);
+        return ESP_FAIL;
+    }
+    httpd_resp_set_type(req, "image/jpeg");
+    httpd_resp_set_hdr(req, "Content-Disposition", "inline; filename=snapshot.jpg");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+    esp_err_t res = httpd_resp_send(req, (const char *)fb->buf, fb->len);
+    esp_camera_fb_return(fb);
+    return res;
+}
+
 static esp_err_t status_handler(httpd_req_t *req)
 {
     cJSON *root = cJSON_CreateObject();
@@ -120,6 +132,9 @@ static esp_err_t status_handler(httpd_req_t *req)
     cJSON_AddNumberToObject(root, "heap_free", esp_get_free_heap_size());
     cJSON_AddNumberToObject(root, "heap_min", esp_get_minimum_free_heap_size());
     cJSON_AddStringToObject(root, "version", ota_get_version());
+    cJSON_AddNumberToObject(root, "uptime", (double)(esp_timer_get_time() / 1000000));
+    cJSON_AddNumberToObject(root, "rssi", wifi_manager_get_rssi());
+    cJSON_AddBoolToObject(root, "wifi_connected", wifi_manager_is_connected());
 
     const char *json = cJSON_PrintUnformatted(root);
     httpd_resp_set_type(req, "application/json");
@@ -242,7 +257,7 @@ static esp_err_t ota_status_handler(httpd_req_t *req)
 esp_err_t http_server_start(void)
 {
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-    config.max_uri_handlers = 12;
+    config.max_uri_handlers = 14;
     config.stack_size = 8192;
     config.server_port = 80;
     config.close_fn = httpd_close_fn;
@@ -268,6 +283,8 @@ esp_err_t http_server_start(void)
     httpd_register_uri_handler(server, &(httpd_uri_t){
         .uri = "/ws/stream", .method = HTTP_GET, .handler = ws_stream_handler,
         .is_websocket = true});
+    httpd_register_uri_handler(server, &(httpd_uri_t){
+        .uri = "/api/snapshot", .method = HTTP_GET, .handler = snapshot_handler});
     httpd_register_uri_handler(server, &(httpd_uri_t){
         .uri = "/api/debug/wifi-disconnect", .method = HTTP_POST,
         .handler = debug_wifi_disconnect_handler});

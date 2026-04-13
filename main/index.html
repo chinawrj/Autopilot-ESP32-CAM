@@ -5,148 +5,81 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Autopilot ESP32-CAM</title>
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body {
-    background: #1a1a2e;
-    color: #eee;
-    font-family: 'Courier New', monospace;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    min-height: 100vh;
-}
-h1 {
-    margin: 12px 0 8px;
-    font-size: 1.2em;
-    color: #0ff;
-    letter-spacing: 2px;
-}
-.stream-container {
-    position: relative;
-    display: inline-block;
-    border: 2px solid #0ff;
-    border-radius: 4px;
-    overflow: hidden;
-}
-#stream {
-    display: block;
-    max-width: 90vw;
-    max-height: 70vh;
-    background: #000;
-}
-.hud {
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    display: flex;
-    justify-content: space-between;
-    padding: 6px 12px;
-    background: rgba(0,0,0,0.6);
-    font-size: 14px;
-    color: #0f0;
-    pointer-events: none;
-}
-.hud span { margin: 0 8px; }
-.controls {
-    margin: 12px 0;
-    display: flex;
-    gap: 12px;
-    align-items: center;
-}
-.led-btn {
-    padding: 8px 20px;
-    font-size: 14px;
-    border: 2px solid #555;
-    border-radius: 4px;
-    background: #333;
-    color: #eee;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-.led-btn.on { border-color: #0f0; color: #0f0; }
-.led-btn.off { border-color: #f00; color: #f00; }
-.status-bar {
-    font-size: 12px;
-    color: #888;
-    margin-top: 8px;
-}
-.ota-panel {
-    margin: 10px 0;
-    padding: 10px 16px;
-    border: 1px solid #444;
-    border-radius: 4px;
-    background: #222;
-    width: 90vw;
-    max-width: 640px;
-}
-.ota-panel summary {
-    cursor: pointer;
-    color: #0ff;
-    font-size: 13px;
-}
-.ota-row {
-    display: flex;
-    gap: 8px;
-    margin-top: 8px;
-    align-items: center;
-}
-.ota-row input {
-    flex: 1;
-    padding: 6px 8px;
-    font-size: 13px;
-    border: 1px solid #555;
-    border-radius: 3px;
-    background: #1a1a2e;
-    color: #eee;
-    font-family: 'Courier New', monospace;
-}
-.ota-btn {
-    padding: 6px 14px;
-    font-size: 13px;
-    border: 1px solid #f80;
-    border-radius: 3px;
-    background: #333;
-    color: #f80;
-    cursor: pointer;
-}
-.ota-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-.ota-progress {
-    width: 100%;
-    height: 6px;
-    background: #333;
-    border-radius: 3px;
-    margin-top: 8px;
-    overflow: hidden;
-}
-.ota-progress div {
-    height: 100%;
-    width: 0%;
-    background: #0f0;
-    transition: width 0.3s;
-}
-.ota-status {
-    font-size: 12px;
-    color: #888;
-    margin-top: 4px;
-}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#1a1a2e;color:#eee;font-family:'Courier New',monospace;display:flex;flex-direction:column;align-items:center;min-height:100vh}
+h1{margin:10px 0 4px;font-size:1.2em;color:#0ff;letter-spacing:2px}
+.tabs{display:flex;gap:2px;margin:6px 0}
+.tab{padding:6px 16px;font-size:13px;border:1px solid #444;border-radius:4px 4px 0 0;background:#222;color:#888;cursor:pointer;font-family:inherit}
+.tab.active{background:#1a1a2e;color:#0ff;border-bottom-color:#1a1a2e}
+.stream-box{position:relative;display:inline-block;border:2px solid #0ff;border-radius:0 0 4px 4px;overflow:hidden;background:#000}
+#tcp-view{display:block;max-width:90vw;max-height:65vh;background:#000}
+#ws-canvas{display:block;max-width:90vw;max-height:65vh;background:#000}
+.hud{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;padding:5px 10px;background:rgba(0,0,0,.65);font-size:13px;color:#0f0;pointer-events:none}
+.hud span{margin:0 6px}
+.controls{margin:8px 0;display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center}
+.btn{padding:7px 16px;font-size:13px;border:2px solid #555;border-radius:4px;background:#333;color:#eee;cursor:pointer;transition:all .2s;font-family:inherit}
+.btn:hover{border-color:#0ff}
+.btn.on{border-color:#0f0;color:#0f0}
+.btn.off{border-color:#f00;color:#f00}
+.btn.snap{border-color:#ff0;color:#ff0}
+select{padding:7px;font-size:12px;border:2px solid #555;border-radius:4px;background:#333;color:#eee;cursor:pointer;font-family:inherit}
+.ws-only{display:none}
+.panel{margin:6px 0;padding:10px 14px;border:1px solid #444;border-radius:4px;background:#222;width:90vw;max-width:640px}
+.panel summary{cursor:pointer;color:#0ff;font-size:13px}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;margin-top:8px;font-size:12px;color:#aaa}
+.info-grid .val{color:#0f0;text-align:right}
+.ota-row{display:flex;gap:8px;margin-top:8px;align-items:center}
+.ota-row input{flex:1;padding:6px 8px;font-size:13px;border:1px solid #555;border-radius:3px;background:#1a1a2e;color:#eee;font-family:inherit}
+.ota-btn{padding:6px 14px;font-size:13px;border:1px solid #f80;border-radius:3px;background:#333;color:#f80;cursor:pointer}
+.ota-btn:disabled{opacity:.4;cursor:not-allowed}
+.ota-progress{width:100%;height:5px;background:#333;border-radius:3px;margin-top:6px;overflow:hidden}
+.ota-progress div{height:100%;width:0%;background:#0f0;transition:width .3s}
+.ota-status{font-size:11px;color:#888;margin-top:3px}
+.status-bar{font-size:11px;color:#666;margin:6px 0 10px}
 </style>
 </head>
 <body>
 <h1>AUTOPILOT ESP32-CAM</h1>
-<div class="stream-container">
-    <img id="stream" src="/stream/tcp" alt="Live Stream">
+<div class="tabs">
+    <div class="tab active" onclick="switchMode('tcp')">TCP Stream</div>
+    <div class="tab" onclick="switchMode('ws')">WS Stream</div>
+</div>
+<div class="stream-box">
+    <img id="tcp-view" src="/stream/tcp" alt="MJPEG">
+    <canvas id="ws-canvas" width="640" height="480" style="display:none"></canvas>
     <div class="hud">
         <span id="hud-fps">FPS: --</span>
-        <span id="hud-temp">TEMP: --.-&deg;C</span>
+        <span id="hud-temp">TEMP: --&deg;C</span>
+        <span id="hud-ws" style="display:none">WS: --</span>
     </div>
 </div>
 <div class="controls">
-    <button id="led-btn" class="led-btn off" onclick="toggleLed()">&#x1F534; LED OFF</button>
+    <button id="led-btn" class="btn off" onclick="toggleLed()">&#x1F534; LED OFF</button>
+    <button class="btn snap" onclick="takeSnapshot()">&#x1F4F7; Snapshot</button>
+    <select class="ws-only" id="sel-q" onchange="wsSend({action:'set_quality',value:parseInt(this.value)})">
+        <option value="10">Q:10 Best</option><option value="12" selected>Q:12</option>
+        <option value="20">Q:20</option><option value="30">Q:30</option><option value="50">Q:50 Fast</option>
+    </select>
+    <select class="ws-only" id="sel-res" onchange="wsSend({action:'set_resolution',value:this.value})">
+        <option value="QVGA">QVGA</option><option value="VGA" selected>VGA</option>
+        <option value="SVGA">SVGA</option><option value="XGA">XGA</option>
+    </select>
 </div>
-<div class="nav" style="margin:4px 0;font-size:12px;">
-    <a href="/stream/ws" style="color:#0ff;text-decoration:none;">WebSocket Stream &rarr;</a>
-</div>
-<details class="ota-panel">
-    <summary>&#x2699; System &amp; OTA Update <span id="fw-ver" style="color:#888;font-size:11px;"></span></summary>
+
+<details class="panel" open>
+    <summary>&#x1F4CA; System Info <span id="fw-ver" style="color:#888;font-size:11px"></span></summary>
+    <div class="info-grid">
+        <span>Uptime</span><span class="val" id="si-uptime">--</span>
+        <span>Heap Free</span><span class="val" id="si-heap">--</span>
+        <span>Heap Min</span><span class="val" id="si-hmin">--</span>
+        <span>WiFi RSSI</span><span class="val" id="si-rssi">--</span>
+        <span>WiFi Status</span><span class="val" id="si-wifi">--</span>
+        <span>Temperature</span><span class="val" id="si-temp">--</span>
+    </div>
+</details>
+
+<details class="panel">
+    <summary>&#x2699; OTA Firmware Update</summary>
     <div class="ota-row">
         <input id="ota-url" type="text" placeholder="http://server/firmware.bin">
         <button id="ota-btn" class="ota-btn" onclick="startOta()">Update</button>
@@ -157,83 +90,106 @@ h1 {
 <div class="status-bar" id="status">Connecting...</div>
 
 <script>
-var ledState = false;
+var mode='tcp', ws=null, ledState=false;
+var wsFc=0, wsLastT=Date.now(), wsFps=0;
+var canvas=document.getElementById('ws-canvas'), ctx=canvas.getContext('2d');
+
+function switchMode(m) {
+    mode = m;
+    document.querySelectorAll('.tab').forEach(function(t,i){t.className='tab'+(i===(m==='tcp'?0:1)?' active':'')});
+    document.getElementById('tcp-view').style.display = m==='tcp'?'block':'none';
+    canvas.style.display = m==='ws'?'block':'none';
+    document.getElementById('hud-ws').style.display = m==='ws'?'inline':'none';
+    document.querySelectorAll('.ws-only').forEach(function(el){el.style.display=m==='ws'?'inline-block':'none'});
+    if (m==='ws' && !ws) connectWs();
+    if (m==='tcp' && ws) { ws.close(); ws=null; }
+}
+
+function connectWs() {
+    ws = new WebSocket('ws://'+location.host+'/ws/stream');
+    ws.binaryType = 'arraybuffer';
+    ws.onopen = function(){ document.getElementById('hud-ws').textContent='WS: connected'; };
+    ws.onmessage = function(e) {
+        if (typeof e.data==='string') {
+            try { var m=JSON.parse(e.data); if(m.heap_free) document.getElementById('si-heap').textContent=Math.round(m.heap_free/1024)+'KB'; } catch(x){}
+            return;
+        }
+        var blob=new Blob([e.data],{type:'image/jpeg'}), url=URL.createObjectURL(blob), img=new Image();
+        img.onload=function(){ if(canvas.width!==img.width||canvas.height!==img.height){canvas.width=img.width;canvas.height=img.height;} ctx.drawImage(img,0,0); URL.revokeObjectURL(url); wsFc++; };
+        img.src=url;
+    };
+    ws.onerror = function(){ document.getElementById('hud-ws').textContent='WS: error'; };
+    ws.onclose = function(){ document.getElementById('hud-ws').textContent='WS: disconnected'; ws=null; if(mode==='ws') setTimeout(connectWs,2000); };
+}
+function wsSend(o){ if(ws&&ws.readyState===1) ws.send(JSON.stringify(o)); }
+
+function fmtUptime(s) {
+    var d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60);
+    return (d>0?d+'d ':'')+(h>0?h+'h ':'')+m+'m';
+}
 
 function updateStatus() {
-    fetch('/api/status')
-        .then(function(r) { return r.json(); })
-        .then(function(d) {
-            document.getElementById('hud-fps').textContent = 'FPS: ' + d.fps.toFixed(1);
-            document.getElementById('hud-temp').innerHTML = 'TEMP: ' + d.temperature.toFixed(1) + '&deg;C';
-            ledState = d.led_state;
-            var btn = document.getElementById('led-btn');
-            if (ledState) {
-                btn.className = 'led-btn on';
-                btn.innerHTML = '&#x1F7E2; LED ON';
-            } else {
-                btn.className = 'led-btn off';
-                btn.innerHTML = '&#x1F534; LED OFF';
-            }
-            document.getElementById('status').textContent =
-                'Connected | ' + new Date().toLocaleTimeString();
-        })
-        .catch(function() {
-            document.getElementById('status').textContent = 'Connection lost...';
-        });
+    fetch('/api/status').then(function(r){return r.json()}).then(function(d){
+        var fps = mode==='ws' ? wsFps : d.fps;
+        document.getElementById('hud-fps').textContent='FPS: '+fps.toFixed(1);
+        document.getElementById('hud-temp').innerHTML='TEMP: '+d.temperature.toFixed(1)+'&deg;C';
+        ledState=d.led_state;
+        var btn=document.getElementById('led-btn');
+        btn.className='btn '+(ledState?'on':'off');
+        btn.innerHTML=ledState?'&#x1F7E2; LED ON':'&#x1F534; LED OFF';
+        document.getElementById('si-uptime').textContent=fmtUptime(d.uptime);
+        document.getElementById('si-heap').textContent=Math.round(d.heap_free/1024)+'KB';
+        document.getElementById('si-hmin').textContent=Math.round(d.heap_min/1024)+'KB';
+        document.getElementById('si-rssi').textContent=d.rssi+'dBm';
+        document.getElementById('si-wifi').textContent=d.wifi_connected?'Connected':'Disconnected';
+        document.getElementById('si-temp').textContent=d.temperature.toFixed(1)+'\u00B0C';
+        if(d.version) document.getElementById('fw-ver').textContent=' v'+d.version;
+        document.getElementById('status').textContent='Connected | '+new Date().toLocaleTimeString();
+    }).catch(function(){ document.getElementById('status').textContent='Connection lost...'; });
+}
+
+function updateWsFps() {
+    var now=Date.now(), dt=now-wsLastT;
+    if(dt>=1000){ wsFps=wsFc*1000/dt; wsFc=0; wsLastT=now; }
 }
 
 function toggleLed() {
-    fetch('/api/led', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({state: 'toggle'})
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(d) {
-        ledState = d.led_state;
-        updateStatus();
-    })
-    .catch(function() {});
+    fetch('/api/led',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({state:'toggle'})})
+    .then(function(r){return r.json()}).then(function(){updateStatus()}).catch(function(){});
 }
 
-setInterval(updateStatus, 1000);
-updateStatus();
+function takeSnapshot() {
+    fetch('/api/snapshot').then(function(r){return r.blob()}).then(function(b){
+        var a=document.createElement('a');
+        a.href=URL.createObjectURL(b);
+        a.download='esp32cam_'+new Date().toISOString().replace(/[:.]/g,'-')+'.jpg';
+        a.click(); URL.revokeObjectURL(a.href);
+    }).catch(function(){alert('Snapshot failed');});
+}
 
 function startOta() {
-    var url = document.getElementById('ota-url').value.trim();
-    if (!url) { alert('Enter firmware URL'); return; }
-    if (!confirm('Start OTA update? Device will reboot.')) return;
-    document.getElementById('ota-btn').disabled = true;
-    fetch('/api/ota', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({url: url})
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(d) {
-        if (d.status === 'started') pollOta();
-        else { document.getElementById('ota-status').textContent = 'Error: ' + (d.error || 'unknown'); document.getElementById('ota-btn').disabled = false; }
-    })
-    .catch(function() { document.getElementById('ota-status').textContent = 'Request failed'; document.getElementById('ota-btn').disabled = false; });
+    var url=document.getElementById('ota-url').value.trim();
+    if(!url){alert('Enter firmware URL');return;}
+    if(!confirm('Start OTA update? Device will reboot.'))return;
+    document.getElementById('ota-btn').disabled=true;
+    fetch('/api/ota',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:url})})
+    .then(function(r){return r.json()}).then(function(d){
+        if(d.status==='started') pollOta();
+        else{document.getElementById('ota-status').textContent='Error: '+(d.error||'unknown');document.getElementById('ota-btn').disabled=false;}
+    }).catch(function(){document.getElementById('ota-status').textContent='Request failed';document.getElementById('ota-btn').disabled=false;});
 }
-
 function pollOta() {
-    fetch('/api/ota/status')
-        .then(function(r) { return r.json(); })
-        .then(function(d) {
-            document.getElementById('ota-bar').style.width = d.progress + '%';
-            document.getElementById('ota-status').textContent = d.status + ' (' + d.progress + '%)';
-            if (d.in_progress) setTimeout(pollOta, 500);
-            else document.getElementById('ota-btn').disabled = false;
-        })
-        .catch(function() { document.getElementById('ota-status').textContent = 'Device rebooting...'; });
+    fetch('/api/ota/status').then(function(r){return r.json()}).then(function(d){
+        document.getElementById('ota-bar').style.width=d.progress+'%';
+        document.getElementById('ota-status').textContent=d.status+' ('+d.progress+'%)';
+        if(d.in_progress) setTimeout(pollOta,500);
+        else document.getElementById('ota-btn').disabled=false;
+    }).catch(function(){document.getElementById('ota-status').textContent='Device rebooting...';});
 }
 
-/* Show firmware version */
-fetch('/api/ota/status')
-    .then(function(r) { return r.json(); })
-    .then(function(d) { document.getElementById('fw-ver').textContent = ' (v' + d.version + ')'; })
-    .catch(function() {});
+setInterval(updateStatus,1000);
+setInterval(updateWsFps,500);
+updateStatus();
 </script>
 </body>
 </html>
