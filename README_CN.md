@@ -25,9 +25,12 @@
 | **实时 HUD** | FPS 计数器 + 虚拟温度传感器 (25°C ±3°C)，叠加在视频画面上 |
 | **WebSocket 控制** | 动态调整画质 (Q10-Q50)、分辨率 (QVGA/VGA/SVGA/XGA) |
 | **LED 控制** | 网页按钮控制板载 LED (GPIO33) 开/关/切换 |
+| **OTA 固件升级** | 通过 `POST /api/ota` 远程升级固件，支持进度跟踪和回滚保护 |
+| **快照 API** | `GET /api/snapshot` 返回单帧 JPEG 图像，支持下载 |
+| **统一仪表盘** | 单页面 UI，TCP / WebSocket 标签切换，所有控制集于一页 |
 | **心跳机制** | 5 秒周期心跳，推送 FPS、客户端数、堆内存等状态 |
 | **WiFi 自动重连** | 断线后指数退避无限重连 (1s → 10s) |
-| **堆内存监控** | `/api/status` 返回实时堆内存信息，每 30s 串口日志输出 |
+| **堆内存监控** | `/api/status` 返回实时堆内存、RSSI、运行时间信息，每 30s 串口日志输出 |
 
 ## 硬件参数
 
@@ -79,16 +82,21 @@
 ```mermaid
 graph TB
     subgraph Browser["🌐 浏览器客户端"]
-        A1["📺 MJPEG 页面<br/>index.html"]
-        A2["📺 WebSocket 页面<br/>stream_ws.html"]
+        A1["📺 统一仪表盘<br/>index.html (TCP / WS 标签切换)"]
     end
 
     subgraph ESP["⚡ ESP32-CAM"]
-        subgraph HTTP["HTTP 服务器"]
-            B2["GET /stream/tcp"]
+        subgraph HTTP80["HTTP 服务器 :80 (API + 页面 + WS)"]
+            B1["GET /"]
             B4["GET /api/status"]
             B5["POST /api/led"]
             B6["WS /ws/stream"]
+            B7["GET /api/snapshot"]
+            B8["POST /api/ota"]
+        end
+
+        subgraph HTTP8081["视频流服务器 :8081 (MJPEG)"]
+            B2["GET /stream/tcp"]
         end
 
         subgraph Modules["核心模块"]
@@ -97,6 +105,7 @@ graph TB
             C3["ws_stream<br/>WebSocket 流"]
             C4["led_controller<br/>LED 控制"]
             C5["virtual_sensor<br/>虚拟传感器"]
+            C6["ota_update<br/>OTA 升级"]
         end
 
         subgraph HW["硬件层"]
@@ -104,21 +113,25 @@ graph TB
             D3["8MB PSRAM"]
             D4["GPIO33 LED"]
             D5["WiFi 射频"]
+            D6["双 OTA Flash"]
         end
     end
 
-    A1 -- "HTTP" --> B2
-    A2 -- "WebSocket" --> B6
-    A1 & A2 -- "fetch" --> B4
-    A1 & A2 -- "POST" --> B5
+    A1 -- "HTTP :8081" --> B2
+    A1 -- "WebSocket" --> B6
+    A1 -- "fetch" --> B4 & B7
+    A1 -- "POST" --> B5 & B8
 
     B2 --> C2
     B6 --> C3 --> C2
+    B7 --> C2
     B4 --> C5
     B5 --> C4
+    B8 --> C6
     C1 --> D5
     C2 --> D2 & D3
     C4 --> D4
+    C6 --> D6
 ```
 
 ## 快速开始
@@ -171,27 +184,23 @@ I (2630) main: System ready — http://192.168.1.171/
 
 | 页面 | URL | 说明 |
 |------|-----|------|
-| MJPEG 视频流 | `http://<IP>/` | TCP MJPEG 视频 + HUD |
-| WebSocket 视频流 | `http://<IP>/stream/ws` | WebSocket 视频 + 控制面板 |
-| 状态 API | `http://<IP>/api/status` | JSON: fps, temperature, heap 等 |
+| 仪表盘 | `http://<IP>/` | 统一 UI，TCP/WS 标签切换 |
+| MJPEG 视频流 | `http://<IP>:8081/stream/tcp` | 直接 MJPEG 视频（也嵌入仪表盘） |
+| 状态 API | `http://<IP>/api/status` | JSON: fps, temperature, heap, rssi, uptime |
 | LED 控制 | `POST http://<IP>/api/led` | Body: `{"state":"on/off/toggle"}` |
+| 快照 | `http://<IP>/api/snapshot` | 单帧 JPEG 图像捕获 |
+| OTA 升级 | `POST http://<IP>/api/ota` | Body: `{"url":"http://..."}` |
+| OTA 状态 | `http://<IP>/api/ota/status` | OTA 进度和状态 |
 
 ## Web 界面
 
-### MJPEG 视频流页面
+### 统一仪表盘
 
-实时视频流，半透明 HUD 叠加显示 FPS 和温度数据，配有 LED 切换按钮。
-
-<p align="center">
-  <img src="docs/images/mjpeg-stream.png" width="70%" alt="MJPEG 视频流页面">
-</p>
-
-### WebSocket 视频流页面
-
-功能完整的控制面板：画质/分辨率调整、堆内存显示、WebSocket 连接状态指示。
+单页应用，支持 TCP MJPEG / WebSocket 视频流标签切换。集成 HUD 叠加显示（FPS + 温度）、LED 控制、快照下载、OTA 固件升级、系统信息面板。
 
 <p align="center">
-  <img src="docs/images/ws-stream.png" width="70%" alt="WebSocket 视频流页面">
+  <img src="docs/images/mjpeg-stream.png" width="48%" alt="MJPEG 视频流 + HUD">
+  <img src="docs/images/ws-stream.png" width="48%" alt="WebSocket 视频流 + 控制面板">
 </p>
 
 ## API 接口
@@ -204,7 +213,11 @@ I (2630) main: System ready — http://192.168.1.171/
   "temperature": 25.3,
   "led_state": false,
   "heap_free": 4224764,
-  "heap_min": 4161592
+  "heap_min": 4161592,
+  "rssi": -45,
+  "uptime": 3600,
+  "wifi_connected": true,
+  "version": "1.1.1"
 }
 ```
 
@@ -240,18 +253,39 @@ curl -X POST http://192.168.1.171/api/led -d '{"state":"off"}'
 {"action": "get_status"}
 ```
 
+### GET `/api/snapshot`
+
+返回单帧 JPEG 图像（`Content-Type: image/jpeg`）。
+
+```bash
+curl -o snapshot.jpg http://192.168.1.171/api/snapshot
+```
+
+### POST `/api/ota`
+
+```bash
+curl -X POST http://192.168.1.171/api/ota -d '{"url":"http://192.168.1.100:8070/firmware.bin"}'
+```
+
+### GET `/api/ota/status`
+
+```json
+{"status": "idle", "progress": 0, "message": ""}
+```
+
 ## 性能指标
 
 | 指标 | 值 |
 |------|-----|
 | MJPEG 帧率 | ~10 fps (VGA, 单客户端) |
 | WebSocket 帧率 | ~10 fps (VGA, 单客户端) |
-| 多客户端 | 2 WS + 1 MJPEG 同时运行，0 错误 |
+| 多客户端 | 3 WS + 1 MJPEG 同时运行，0 错误 |
 | JPEG 帧大小 | ~10-15 KB (VGA, q=12) |
-| 空闲堆内存 | ~4.1 MB (含 PSRAM) |
-| 固件大小 | ~1034 KB (Flash 67% 空闲) |
+| 空闲堆内存 | ~4.2 MB (含 PSRAM) |
+| 固件大小 | ~1.0 MB (双 OTA 分区) |
+| 分区布局 | 双 OTA (3MB × 2) + 1.97MB SPIFFS |
 | WiFi 重连 | 自动，1-10s 指数退避 |
-| C 代码总量 | ~850 行，7 个源文件 |
+| C 代码总量 | ~1300 行，9 个源文件 |
 
 ## 项目结构
 
@@ -259,16 +293,22 @@ curl -X POST http://192.168.1.171/api/led -d '{"state":"off"}'
 ├── main/
 │   ├── main.c              # 入口，初始化链 + 堆日志
 │   ├── wifi_manager.c/h    # WiFi STA 管理，自动重连
-│   ├── camera_init.c/h     # OV2640 摄像头初始化
-│   ├── http_server.c/h     # HTTP 服务器，路由注册
+│   ├── camera_init.c/h     # OV2640 摄像头初始化 + I2C 恢复
+│   ├── http_server.c/h     # HTTP 服务器 :80，API 路由，WebSocket 升级
+│   ├── stream_server.c/h   # 独立 MJPEG 视频流服务器 :8081
 │   ├── ws_stream.c/h       # WebSocket 视频流 + 控制消息
+│   ├── ota_update.c/h      # OTA 固件升级，支持回滚保护
 │   ├── led_controller.c/h  # GPIO33 LED 驱动
-│   ├── index.html          # MJPEG 视频流前端页面
-│   └── stream_ws.html      # WebSocket 视频流前端页面
+│   ├── index.html          # 统一仪表盘（TCP/WS 标签 + 所有控制）
+│   └── stream_ws.html      # WebSocket 视频流独立页面
 ├── components/
 │   └── virtual_sensor/     # 虚拟温度传感器组件
 ├── tools/
 │   ├── provision-wifi.sh       # WiFi 凭据安全注入
+│   ├── quality_audit.py        # API 测试套件 (80 项)
+│   ├── browser_qa.py           # 浏览器 UI 测试套件 (50 项)
+│   ├── regression_test.py      # 浏览器回归测试
+│   ├── ota_e2e_test.py         # OTA 端到端测试
 │   ├── heap_monitor.py         # 堆内存趋势监控
 │   ├── multi_client_test.py    # 多客户端并发压力测试
 │   ├── wifi_reconnect_test.py  # WiFi 重连测试
@@ -277,9 +317,10 @@ curl -X POST http://192.168.1.171/api/led -d '{"state":"off"}'
 ├── docs/
 │   ├── TARGET.md           # 里程碑进度跟踪
 │   ├── images/             # 文档截图
-│   └── daily-logs/         # 每日开发日志 (Day 000–012)
+│   └── daily-logs/         # 每日开发日志 (Day 000–020)
+├── CHANGELOG.md            # 版本变更记录
 ├── sdkconfig.defaults      # ESP-IDF 默认配置
-├── partitions.csv          # 分区表 (3MB app + 960KB storage)
+├── partitions.csv          # 分区表（双 OTA 3MB×2 + 1.97MB SPIFFS）
 └── CMakeLists.txt
 ```
 
@@ -309,6 +350,10 @@ curl -X POST http://192.168.1.171/api/led -d '{"state":"off"}'
 | M4: WebSocket 流 | Day 8 | WS 视频 + 控制消息 + 心跳 |
 | M5: 稳定性优化 | Day 11 | 内存泄漏测试 + 压力测试 + WiFi 重连 |
 | Release v1.0.0 | Day 13 | 中英双语文档 + 截图 + GitHub Release |
+| M6: OTA + 仪表盘 | Day 18 | OTA 升级 + 快照 + 统一仪表盘 |
+| Release v1.1.0 | Day 18 | 双服务器架构 + OTA + 统一 UI |
+| 质量审计 | Day 19 | 130/130 测试通过，端口 81→8081 修复 |
+| Release v1.1.1 | Day 20 | 文档刷新 + 补丁发布 |
 
 每次代码变更都经过完整的 编译 → 烧录 → 串口验证 → 浏览器验证 循环。详细日志见 [docs/daily-logs/](docs/daily-logs/)。
 

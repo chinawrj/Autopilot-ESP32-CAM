@@ -2,6 +2,31 @@
 
 All notable changes to Autopilot ESP32-CAM are documented in this file.
 
+## [v1.1.1] — 2026-04-14
+
+### 🐛 Bug Fixes
+
+- **MJPEG stream port 81 → 8081** — Changed from port 81 to 8081 to avoid transparent HTTP proxy interception on common low ports (discovered during quality audit)
+
+### 📝 Documentation
+
+- **README overhaul** — Updated both README.md and README_CN.md to reflect v1.1.x architecture:
+  - Architecture diagram: single server → dual server (:80 API + :8081 MJPEG)
+  - Features table: added OTA, Snapshot, Unified Dashboard, System Info
+  - API Reference: added `/api/snapshot`, `/api/ota`, `/api/ota/status`
+  - Project structure: added `stream_server.c/h`, `ota_update.c/h`, new test tools
+  - Performance metrics: updated code stats (~1300 lines / 9 source files)
+  - Partition layout: updated to dual OTA (3MB × 2) + 1.97MB SPIFFS
+  - Milestone timeline: added v1.1.0, quality audit, v1.1.1
+
+### 🧪 Testing
+
+- ✅ Quality audit: 130/130 tests passed (80 API + 50 browser)
+- `tools/quality_audit.py` — 80-item API test suite
+- `tools/browser_qa.py` — 50-item Patchright browser UI test suite
+
+---
+
 ## [v1.1.0] — 2026-04-13
 
 ### ✨ New Features

@@ -1,33 +1,31 @@
-# v1.0.0 — Initial Release | 首个正式版本
+# v1.1.1 — Patch Release | 补丁发布
 
-## 🎉 Autopilot ESP32-CAM v1.0.0
+## Autopilot ESP32-CAM v1.1.1
 
-A complete real-time camera web server for the **YD-ESP32-CAM** (ESP32-WROVER-E-N8R8) development board, developed entirely by an AI Agent through 12 daily iterations.
+Patch release with documentation refresh and port fix. All documentation now accurately reflects the v1.1.x dual-server architecture.
 
-基于 **YD-ESP32-CAM** (ESP32-WROVER-E-N8R8) 开发板的完整实时摄像头 Web 服务器，由 AI Agent 通过 12 天每日迭代从零开发至交付。
+补丁发布：文档全面刷新 + 端口修复。所有文档现已准确反映 v1.1.x 双服务器架构。
 
 ---
 
-## ✨ Features | 功能特性
+## 🐛 Bug Fixes | 修复
 
-### Video Streaming | 视频流
-- **TCP MJPEG Stream** (`/stream/tcp`) — HTTP multipart MJPEG, works in any browser `<img>` tag
-- **WebSocket Stream** (`/ws/stream`) — Binary JPEG push + Canvas rendering, up to **4 concurrent clients**
-- Dynamic **quality control** (Q10–Q50) and **resolution control** (QVGA / VGA / SVGA / XGA) via WebSocket
+- **MJPEG stream port 81 → 8081** — Avoids transparent HTTP proxy interception on low ports (discovered during Day 19 quality audit, 130/130 tests passed)
 
-### HUD & Monitoring | 实时显示与监控
-- **Real-time HUD Overlay** — FPS counter + virtual temperature sensor (25°C ±3°C)
-- **Heartbeat** — 5-second periodic status push (FPS, client count, heap memory)
-- **Status API** (`GET /api/status`) — JSON with fps, temperature, LED state, heap info
+## 📝 Documentation | 文档
 
-### Control | 控制
-- **LED Remote Control** — Web button and REST API (`POST /api/led`) for GPIO33 on/off/toggle
-- **WiFi Auto-Reconnect** — Exponential backoff (1s → 10s), infinite retry after initial connect
+- **README overhaul** — Both EN/CN README updated to match v1.1.x reality:
+  - Architecture: dual HTTP server (:80 API + :8081 MJPEG stream)
+  - Features: +OTA firmware update, +Snapshot API, +Unified Dashboard, +System Info
+  - API Reference: +`/api/snapshot`, +`/api/ota`, +`/api/ota/status`
+  - Project structure: +`stream_server.c/h`, +`ota_update.c/h`, +QA test tools
+  - Performance: ~1300 lines / 9 source files, dual OTA partition layout
+  - Milestone timeline: added v1.1.0 through v1.1.1
 
-### Documentation | 文档
-- **Bilingual README** — English ([README.md](README.md)) + Chinese ([README_CN.md](README_CN.md))
-- **Architecture Diagram** — Mermaid-based system diagram embedded in README
-- **Screenshots** — Captured from real hardware via browser automation
+## 🧪 QA Tools | 测试工具
+
+- `tools/quality_audit.py` — 80-item API test suite (curl-based)
+- `tools/browser_qa.py` — 50-item browser UI test suite (Patchright Chrome)
 
 ---
 
@@ -35,13 +33,14 @@ A complete real-time camera web server for the **YD-ESP32-CAM** (ESP32-WROVER-E-
 
 | Metric | Value |
 |--------|-------|
-| MJPEG FPS | ~10 fps (VGA, single client) |
-| WebSocket FPS | ~10 fps (VGA, single client) |
-| Multi-client | 2 WS + 1 MJPEG simultaneous, **0 errors** |
-| JPEG Frame Size | ~10-15 KB (VGA, q=12) |
-| Free Heap | ~4.1 MB (with PSRAM) |
-| Firmware Size | ~1034 KB (67% Flash free) |
-| Total C Code | ~850 lines across 7 source files |
+| MJPEG FPS | ~10 fps (VGA) |
+| WebSocket FPS | ~10 fps (VGA) |
+| Multi-client | 3 WS + 1 MJPEG, 0 errors (300s) |
+| Free Heap | ~4.2 MB |
+| Firmware Size | ~1.0 MB |
+| Partition Layout | Dual OTA (3MB × 2) + 1.97MB SPIFFS |
+| Total C Code | ~1300 lines across 9 source files |
+| QA Coverage | 130/130 tests (80 API + 50 browser) |
 
 ---
 
@@ -54,21 +53,6 @@ A complete real-time camera web server for the **YD-ESP32-CAM** (ESP32-WROVER-E-
 | SoC | ESP32-D0WD-V3 (Dual-core Xtensa LX6, 240MHz) |
 | Camera | OV2640 (AI-Thinker compatible pinout) |
 | Onboard LED | GPIO33 |
-
----
-
-## 🧪 Testing | 测试验证
-
-All tests passed on real hardware:
-
-| Test | Result |
-|------|--------|
-| Multi-client stress (2WS + 1MJPEG, 60s) | ✅ 0 errors |
-| WiFi disconnect/reconnect (4 rounds) | ✅ 4/4 success, ~2s recovery |
-| Memory leak monitoring | ✅ No leak trend detected |
-| Heap stability | ✅ 4.1–4.2 MB steady state |
-| Compiler warnings | ✅ 0 warnings |
-| Code quality | ✅ All files < 250 lines |
 
 ---
 
@@ -89,14 +73,6 @@ idf.py -p /dev/cu.wchusbserial110 flash monitor
 ```
 
 See [README.md](README.md) for detailed instructions.
-
----
-
-## 📸 Screenshots | 界面截图
-
-| MJPEG Stream + HUD | WebSocket Stream + Controls |
-|:---:|:---:|
-| ![MJPEG](docs/images/mjpeg-stream.png) | ![WebSocket](docs/images/ws-stream.png) |
 
 ---
 

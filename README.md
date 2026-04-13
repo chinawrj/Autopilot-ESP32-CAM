@@ -25,9 +25,12 @@ A real-time camera web server built on the **YD-ESP32-CAM** (ESP32-WROVER-E-N8R8
 | **Real-time HUD** | FPS counter + virtual temperature sensor (25°C ±3°C) overlaid on video |
 | **WebSocket Control** | Dynamic quality (Q10-Q50), resolution (QVGA/VGA/SVGA/XGA) adjustment |
 | **LED Control** | Web button to toggle onboard LED (GPIO33) on/off |
+| **OTA Firmware Update** | Over-the-air upgrade via `POST /api/ota` with progress tracking and rollback protection |
+| **Snapshot API** | `GET /api/snapshot` returns a single JPEG frame for capture/download |
+| **Unified Dashboard** | Single-page UI with tab switching (TCP / WebSocket), all controls on one page |
 | **Heartbeat** | 5-second periodic heartbeat with FPS, client count, and heap memory stats |
 | **WiFi Auto-Reconnect** | Exponential backoff reconnection (1s → 10s), infinite retry after initial connect |
-| **Heap Monitoring** | `/api/status` returns real-time heap info; 30s serial logging |
+| **Heap Monitoring** | `/api/status` returns real-time heap info with RSSI, uptime; 30s serial logging |
 
 ## Hardware
 
@@ -79,16 +82,21 @@ A real-time camera web server built on the **YD-ESP32-CAM** (ESP32-WROVER-E-N8R8
 ```mermaid
 graph TB
     subgraph Browser["🌐 Browser Client"]
-        A1["📺 MJPEG Page<br/>index.html"]
-        A2["📺 WebSocket Page<br/>stream_ws.html"]
+        A1["📺 Unified Dashboard<br/>index.html (TCP / WS tabs)"]
     end
 
     subgraph ESP["⚡ ESP32-CAM"]
-        subgraph HTTP["HTTP Server"]
-            B2["GET /stream/tcp"]
+        subgraph HTTP80["HTTP Server :80 (API + Pages + WS)"]
+            B1["GET /"]
             B4["GET /api/status"]
             B5["POST /api/led"]
             B6["WS /ws/stream"]
+            B7["GET /api/snapshot"]
+            B8["POST /api/ota"]
+        end
+
+        subgraph HTTP8081["Stream Server :8081 (MJPEG)"]
+            B2["GET /stream/tcp"]
         end
 
         subgraph Modules["Core Modules"]
@@ -97,6 +105,7 @@ graph TB
             C3["ws_stream"]
             C4["led_controller"]
             C5["virtual_sensor"]
+            C6["ota_update"]
         end
 
         subgraph HW["Hardware"]
@@ -104,21 +113,25 @@ graph TB
             D3["8MB PSRAM"]
             D4["GPIO33 LED"]
             D5["WiFi Radio"]
+            D6["Dual OTA Flash"]
         end
     end
 
-    A1 -- "HTTP" --> B2
-    A2 -- "WebSocket" --> B6
-    A1 & A2 -- "fetch" --> B4
-    A1 & A2 -- "POST" --> B5
+    A1 -- "HTTP :8081" --> B2
+    A1 -- "WebSocket" --> B6
+    A1 -- "fetch" --> B4 & B7
+    A1 -- "POST" --> B5 & B8
 
     B2 --> C2
     B6 --> C3 --> C2
+    B7 --> C2
     B4 --> C5
     B5 --> C4
+    B8 --> C6
     C1 --> D5
     C2 --> D2 & D3
     C4 --> D4
+    C6 --> D6
 ```
 
 ## Quick Start
@@ -171,27 +184,23 @@ I (2630) main: System ready — http://192.168.1.171/
 
 | Page | URL | Description |
 |------|-----|-------------|
-| MJPEG Stream | `http://<IP>/` | TCP MJPEG video + HUD |
-| WebSocket Stream | `http://<IP>/stream/ws` | WebSocket video + control panel |
-| Status API | `http://<IP>/api/status` | JSON: fps, temperature, heap, etc. |
+| Dashboard | `http://<IP>/` | Unified UI with TCP/WS tab switching |
+| MJPEG Stream | `http://<IP>:8081/stream/tcp` | Direct MJPEG video (also embedded in dashboard) |
+| Status API | `http://<IP>/api/status` | JSON: fps, temperature, heap, rssi, uptime |
 | LED Control | `POST http://<IP>/api/led` | Body: `{"state":"on/off/toggle"}` |
+| Snapshot | `http://<IP>/api/snapshot` | Single JPEG frame capture |
+| OTA Update | `POST http://<IP>/api/ota` | Body: `{"url":"http://..."}` |
+| OTA Status | `http://<IP>/api/ota/status` | OTA progress and state |
 
 ## Web Interface
 
-### MJPEG Stream Page
+### Unified Dashboard
 
-Real-time video with transparent HUD overlay showing FPS and temperature data, plus LED toggle button.
-
-<p align="center">
-  <img src="docs/images/mjpeg-stream.png" width="70%" alt="MJPEG Stream Page">
-</p>
-
-### WebSocket Stream Page
-
-Full-featured control panel with quality/resolution adjustment, heap memory display, and WebSocket connection status indicator.
+Single-page application with tab switching between TCP MJPEG and WebSocket streams. Includes HUD overlay (FPS + temperature), LED control, snapshot download, OTA firmware update, and system info panel.
 
 <p align="center">
-  <img src="docs/images/ws-stream.png" width="70%" alt="WebSocket Stream Page">
+  <img src="docs/images/mjpeg-stream.png" width="48%" alt="MJPEG Stream with HUD">
+  <img src="docs/images/ws-stream.png" width="48%" alt="WebSocket Stream with Controls">
 </p>
 
 ## API Reference
@@ -204,7 +213,11 @@ Full-featured control panel with quality/resolution adjustment, heap memory disp
   "temperature": 25.3,
   "led_state": false,
   "heap_free": 4224764,
-  "heap_min": 4161592
+  "heap_min": 4161592,
+  "rssi": -45,
+  "uptime": 3600,
+  "wifi_connected": true,
+  "version": "1.1.1"
 }
 ```
 
@@ -240,18 +253,39 @@ curl -X POST http://192.168.1.171/api/led -d '{"state":"off"}'
 {"action": "get_status"}
 ```
 
+### GET `/api/snapshot`
+
+Returns a single JPEG frame (`Content-Type: image/jpeg`).
+
+```bash
+curl -o snapshot.jpg http://192.168.1.171/api/snapshot
+```
+
+### POST `/api/ota`
+
+```bash
+curl -X POST http://192.168.1.171/api/ota -d '{"url":"http://192.168.1.100:8070/firmware.bin"}'
+```
+
+### GET `/api/ota/status`
+
+```json
+{"status": "idle", "progress": 0, "message": ""}
+```
+
 ## Performance
 
 | Metric | Value |
 |--------|-------|
 | MJPEG FPS | ~10 fps (VGA, 1 client) |
 | WebSocket FPS | ~10 fps (VGA, 1 client) |
-| Multi-client | 2 WS + 1 MJPEG simultaneous, 0 errors |
+| Multi-client | 3 WS + 1 MJPEG simultaneous, 0 errors |
 | JPEG Frame Size | ~10-15 KB (VGA, q=12) |
-| Free Heap | ~4.1 MB (with PSRAM) |
-| Firmware Size | ~1034 KB (67% Flash free) |
+| Free Heap | ~4.2 MB (with PSRAM) |
+| Firmware Size | ~1.0 MB (dual OTA partition) |
+| Partition Layout | Dual OTA (3MB × 2) + 1.97MB SPIFFS |
 | WiFi Reconnect | Auto, 1-10s exponential backoff |
-| Total C Code | ~850 lines across 7 source files |
+| Total C Code | ~1300 lines across 9 source files |
 
 ## Project Structure
 
@@ -259,16 +293,22 @@ curl -X POST http://192.168.1.171/api/led -d '{"state":"off"}'
 ├── main/
 │   ├── main.c              # Entry point, init chain + heap logging
 │   ├── wifi_manager.c/h    # WiFi STA management, auto-reconnect
-│   ├── camera_init.c/h     # OV2640 camera initialization
-│   ├── http_server.c/h     # HTTP server, route registration
-│   ├── ws_stream.c/h       # WebSocket video stream + control
+│   ├── camera_init.c/h     # OV2640 camera initialization + I2C recovery
+│   ├── http_server.c/h     # HTTP server :80, API routes, WebSocket upgrade
+│   ├── stream_server.c/h   # Independent MJPEG stream server :8081
+│   ├── ws_stream.c/h       # WebSocket video stream + control messages
+│   ├── ota_update.c/h      # OTA firmware update with rollback protection
 │   ├── led_controller.c/h  # GPIO33 LED driver
-│   ├── index.html          # MJPEG stream frontend
-│   └── stream_ws.html      # WebSocket stream frontend
+│   ├── index.html          # Unified dashboard (TCP/WS tabs + all controls)
+│   └── stream_ws.html      # WebSocket stream standalone page
 ├── components/
 │   └── virtual_sensor/     # Virtual temperature sensor component
 ├── tools/
 │   ├── provision-wifi.sh       # WiFi credential injection
+│   ├── quality_audit.py        # API test suite (80 tests)
+│   ├── browser_qa.py           # Browser UI test suite (50 tests)
+│   ├── regression_test.py      # Browser regression test
+│   ├── ota_e2e_test.py         # OTA end-to-end test
 │   ├── heap_monitor.py         # Heap memory trend monitor
 │   ├── multi_client_test.py    # Multi-client stress test
 │   ├── wifi_reconnect_test.py  # WiFi reconnect test
@@ -277,9 +317,10 @@ curl -X POST http://192.168.1.171/api/led -d '{"state":"off"}'
 ├── docs/
 │   ├── TARGET.md           # Milestone tracking
 │   ├── images/             # Screenshots for documentation
-│   └── daily-logs/         # Daily development logs (Day 000–012)
+│   └── daily-logs/         # Daily development logs (Day 000–020)
+├── CHANGELOG.md            # Version history
 ├── sdkconfig.defaults      # ESP-IDF default configuration
-├── partitions.csv          # Partition table (3MB app + 960KB storage)
+├── partitions.csv          # Partition table (dual OTA 3MB×2 + 1.97MB SPIFFS)
 └── CMakeLists.txt
 ```
 
@@ -309,6 +350,10 @@ The human's role was limited to: connecting the hardware, providing WiFi credent
 | M4: WebSocket Stream | Day 8 | WS video + control messages + heartbeat |
 | M5: Stability | Day 11 | Memory leak tests + stress tests + WiFi reconnect |
 | Release v1.0.0 | Day 13 | Bilingual docs + screenshots + GitHub Release |
+| M6: OTA + Dashboard | Day 18 | OTA update + snapshot + unified dashboard |
+| Release v1.1.0 | Day 18 | Dual server architecture + OTA + unified UI |
+| Quality Audit | Day 19 | 130/130 tests passed, port 81→8081 fix |
+| Release v1.1.1 | Day 20 | Documentation refresh + patch release |
 
 Every code change was build → flash → serial verify → browser verify on real hardware. See [docs/daily-logs/](docs/daily-logs/) for detailed development logs.
 
