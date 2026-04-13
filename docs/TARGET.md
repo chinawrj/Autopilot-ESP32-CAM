@@ -83,8 +83,8 @@
 
 ---
 
-### M4: UDP 视频流 🔄 In Progress
-> **目标日**: Day 7-9
+### M4: UDP 视频流 ✅ Complete
+> **目标日**: Day 7-9 | **完成日**: Day 8
 
 - [ ] UDP 推送端 (udp_stream.c)
   - [ ] JPEG 帧分片 (MTU 1400)
@@ -94,8 +94,8 @@
   - [x] WebSocket binary frame 推送 JPEG (Day 7 实现)
   - [x] 最多 4 客户端并发
   - [x] httpd close callback 自动清理
-  - [ ] 控制消息: start/stop/quality
-  - [ ] 心跳机制
+  - [x] 控制消息: start/stop/quality (Day 8: set_quality, set_resolution, get_status)
+  - [x] 心跳机制 (Day 8: 5s periodic heartbeat with fps/clients/heap)
 - [x] 前端 `/stream/udp` 页面 (Day 7)
   - [x] WebSocket 连接管理 + 自动重连
   - [x] Canvas 渲染 (Blob → Image → drawImage)
