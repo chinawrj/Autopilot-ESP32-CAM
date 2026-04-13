@@ -69,6 +69,65 @@ h1 {
     color: #888;
     margin-top: 8px;
 }
+.ota-panel {
+    margin: 10px 0;
+    padding: 10px 16px;
+    border: 1px solid #444;
+    border-radius: 4px;
+    background: #222;
+    width: 90vw;
+    max-width: 640px;
+}
+.ota-panel summary {
+    cursor: pointer;
+    color: #0ff;
+    font-size: 13px;
+}
+.ota-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    align-items: center;
+}
+.ota-row input {
+    flex: 1;
+    padding: 6px 8px;
+    font-size: 13px;
+    border: 1px solid #555;
+    border-radius: 3px;
+    background: #1a1a2e;
+    color: #eee;
+    font-family: 'Courier New', monospace;
+}
+.ota-btn {
+    padding: 6px 14px;
+    font-size: 13px;
+    border: 1px solid #f80;
+    border-radius: 3px;
+    background: #333;
+    color: #f80;
+    cursor: pointer;
+}
+.ota-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.ota-progress {
+    width: 100%;
+    height: 6px;
+    background: #333;
+    border-radius: 3px;
+    margin-top: 8px;
+    overflow: hidden;
+}
+.ota-progress div {
+    height: 100%;
+    width: 0%;
+    background: #0f0;
+    transition: width 0.3s;
+}
+.ota-status {
+    font-size: 12px;
+    color: #888;
+    margin-top: 4px;
+}
 </style>
 </head>
 <body>
@@ -86,6 +145,15 @@ h1 {
 <div class="nav" style="margin:4px 0;font-size:12px;">
     <a href="/stream/ws" style="color:#0ff;text-decoration:none;">WebSocket Stream &rarr;</a>
 </div>
+<details class="ota-panel">
+    <summary>&#x2699; System &amp; OTA Update <span id="fw-ver" style="color:#888;font-size:11px;"></span></summary>
+    <div class="ota-row">
+        <input id="ota-url" type="text" placeholder="http://server/firmware.bin">
+        <button id="ota-btn" class="ota-btn" onclick="startOta()">Update</button>
+    </div>
+    <div class="ota-progress"><div id="ota-bar"></div></div>
+    <div class="ota-status" id="ota-status">Ready</div>
+</details>
 <div class="status-bar" id="status">Connecting...</div>
 
 <script>
@@ -130,6 +198,42 @@ function toggleLed() {
 
 setInterval(updateStatus, 1000);
 updateStatus();
+
+function startOta() {
+    var url = document.getElementById('ota-url').value.trim();
+    if (!url) { alert('Enter firmware URL'); return; }
+    if (!confirm('Start OTA update? Device will reboot.')) return;
+    document.getElementById('ota-btn').disabled = true;
+    fetch('/api/ota', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({url: url})
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        if (d.status === 'started') pollOta();
+        else { document.getElementById('ota-status').textContent = 'Error: ' + (d.error || 'unknown'); document.getElementById('ota-btn').disabled = false; }
+    })
+    .catch(function() { document.getElementById('ota-status').textContent = 'Request failed'; document.getElementById('ota-btn').disabled = false; });
+}
+
+function pollOta() {
+    fetch('/api/ota/status')
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            document.getElementById('ota-bar').style.width = d.progress + '%';
+            document.getElementById('ota-status').textContent = d.status + ' (' + d.progress + '%)';
+            if (d.in_progress) setTimeout(pollOta, 500);
+            else document.getElementById('ota-btn').disabled = false;
+        })
+        .catch(function() { document.getElementById('ota-status').textContent = 'Device rebooting...'; });
+}
+
+/* Show firmware version */
+fetch('/api/ota/status')
+    .then(function(r) { return r.json(); })
+    .then(function(d) { document.getElementById('fw-ver').textContent = ' (v' + d.version + ')'; })
+    .catch(function() {});
 </script>
 </body>
 </html>

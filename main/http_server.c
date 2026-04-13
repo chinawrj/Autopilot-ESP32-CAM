@@ -15,6 +15,7 @@
 #include "esp_system.h"
 
 #include "wifi_manager.h"
+#include "ota_update.h"
 
 static const char *TAG = "httpd";
 
@@ -118,6 +119,7 @@ static esp_err_t status_handler(httpd_req_t *req)
     cJSON_AddBoolToObject(root, "led_state", led_get_state());
     cJSON_AddNumberToObject(root, "heap_free", esp_get_free_heap_size());
     cJSON_AddNumberToObject(root, "heap_min", esp_get_minimum_free_heap_size());
+    cJSON_AddStringToObject(root, "version", ota_get_version());
 
     const char *json = cJSON_PrintUnformatted(root);
     httpd_resp_set_type(req, "application/json");
@@ -178,10 +180,69 @@ static esp_err_t debug_wifi_disconnect_handler(httpd_req_t *req)
     return httpd_resp_sendstr(req, "{\"status\":\"disconnected\"}");
 }
 
+static esp_err_t ota_handler(httpd_req_t *req)
+{
+    char buf[256];
+    int ret = httpd_req_recv(req, buf, sizeof(buf) - 1);
+    if (ret <= 0) {
+        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "No body");
+        return ESP_FAIL;
+    }
+    buf[ret] = '\0';
+
+    cJSON *root = cJSON_Parse(buf);
+    if (!root) {
+        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Invalid JSON");
+        return ESP_FAIL;
+    }
+
+    cJSON *url = cJSON_GetObjectItem(root, "url");
+    if (!cJSON_IsString(url) || !url->valuestring[0]) {
+        cJSON_Delete(root);
+        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Missing 'url'");
+        return ESP_FAIL;
+    }
+
+    esp_err_t err = ota_start(url->valuestring);
+    cJSON_Delete(root);
+
+    cJSON *resp = cJSON_CreateObject();
+    if (err == ESP_OK) {
+        cJSON_AddStringToObject(resp, "status", "started");
+    } else {
+        cJSON_AddStringToObject(resp, "status", "error");
+        cJSON_AddStringToObject(resp, "error", esp_err_to_name(err));
+    }
+
+    const char *json = cJSON_PrintUnformatted(resp);
+    httpd_resp_set_type(req, "application/json");
+    esp_err_t res = httpd_resp_sendstr(req, json);
+    cJSON_free((void *)json);
+    cJSON_Delete(resp);
+    return res;
+}
+
+static esp_err_t ota_status_handler(httpd_req_t *req)
+{
+    cJSON *root = cJSON_CreateObject();
+    cJSON_AddBoolToObject(root, "in_progress", ota_is_in_progress());
+    cJSON_AddNumberToObject(root, "progress", ota_get_progress());
+    cJSON_AddStringToObject(root, "status", ota_get_status());
+    cJSON_AddStringToObject(root, "version", ota_get_version());
+
+    const char *json = cJSON_PrintUnformatted(root);
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+    esp_err_t res = httpd_resp_sendstr(req, json);
+    cJSON_free((void *)json);
+    cJSON_Delete(root);
+    return res;
+}
+
 esp_err_t http_server_start(void)
 {
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-    config.max_uri_handlers = 10;
+    config.max_uri_handlers = 12;
     config.stack_size = 8192;
     config.server_port = 80;
     config.close_fn = httpd_close_fn;
@@ -210,6 +271,10 @@ esp_err_t http_server_start(void)
     httpd_register_uri_handler(server, &(httpd_uri_t){
         .uri = "/api/debug/wifi-disconnect", .method = HTTP_POST,
         .handler = debug_wifi_disconnect_handler});
+    httpd_register_uri_handler(server, &(httpd_uri_t){
+        .uri = "/api/ota", .method = HTTP_POST, .handler = ota_handler});
+    httpd_register_uri_handler(server, &(httpd_uri_t){
+        .uri = "/api/ota/status", .method = HTTP_GET, .handler = ota_status_handler});
 
     ESP_LOGI(TAG, "HTTP server started on port %d", config.server_port);
     return ESP_OK;

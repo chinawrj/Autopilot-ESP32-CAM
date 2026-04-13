@@ -8,13 +8,14 @@
 #include "led_controller.h"
 #include "virtual_sensor.h"
 #include "ws_stream.h"
+#include "ota_update.h"
 
 static const char *TAG = "main";
 
 void app_main(void)
 {
     ESP_LOGI(TAG, "=== Autopilot ESP32-CAM ===");
-    ESP_LOGI(TAG, "Firmware version: 0.6.0 (M5 Stability)");
+    ESP_LOGI(TAG, "Firmware version: %s", ota_get_version());
 
     /* Initialize WiFi and connect */
     esp_err_t ret = wifi_manager_init();
