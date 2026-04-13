@@ -1,5 +1,8 @@
 #include "camera_init.h"
 #include "esp_log.h"
+#include "driver/gpio.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 static const char *TAG = "camera";
 
@@ -53,7 +56,20 @@ esp_err_t camera_init(void)
         .grab_mode    = CAMERA_GRAB_LATEST,
     };
 
-    esp_err_t err = esp_camera_init(&config);
+    esp_err_t err;
+
+    /* Power-cycle the camera via PWDN pin to ensure clean state after OTA reboot */
+    gpio_config_t io_conf = {
+        .pin_bit_mask = (1ULL << CAM_PIN_PWDN),
+        .mode = GPIO_MODE_OUTPUT,
+    };
+    gpio_config(&io_conf);
+    gpio_set_level(CAM_PIN_PWDN, 1);   /* PWDN HIGH = power down */
+    vTaskDelay(pdMS_TO_TICKS(100));
+    gpio_set_level(CAM_PIN_PWDN, 0);   /* PWDN LOW = power up */
+    vTaskDelay(pdMS_TO_TICKS(100));
+
+    err = esp_camera_init(&config);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Camera init failed: 0x%x", err);
         return err;
