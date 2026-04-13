@@ -20,6 +20,7 @@ static const char *TAG = "wifi_mgr";
 static EventGroupHandle_t s_wifi_event_group;
 static int s_retry_num = 0;
 static bool s_is_connected = false;
+static bool s_initial_done = false;
 static char s_ip_str[16] = "0.0.0.0";
 
 static void event_handler(void *arg, esp_event_base_t event_base,
@@ -29,7 +30,14 @@ static void event_handler(void *arg, esp_event_base_t event_base,
         esp_wifi_connect();
     } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
         s_is_connected = false;
-        if (s_retry_num < WIFI_MAX_RETRY) {
+        if (s_initial_done) {
+            /* After initial connect, always retry with backoff */
+            s_retry_num++;
+            int delay_ms = (s_retry_num > 10) ? 10000 : s_retry_num * 1000;
+            ESP_LOGW(TAG, "WiFi lost, reconnect in %dms (attempt %d)", delay_ms, s_retry_num);
+            vTaskDelay(pdMS_TO_TICKS(delay_ms));
+            esp_wifi_connect();
+        } else if (s_retry_num < WIFI_MAX_RETRY) {
             esp_wifi_connect();
             s_retry_num++;
             ESP_LOGW(TAG, "Retry WiFi connection (%d/%d)", s_retry_num, WIFI_MAX_RETRY);
@@ -43,6 +51,7 @@ static void event_handler(void *arg, esp_event_base_t event_base,
         ESP_LOGI(TAG, "WiFi connected, IP: %s", s_ip_str);
         s_retry_num = 0;
         s_is_connected = true;
+        s_initial_done = true;
         xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
     }
 }

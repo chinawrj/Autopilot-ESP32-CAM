@@ -1,6 +1,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
+#include "esp_system.h"
 #include "wifi_manager.h"
 #include "camera_init.h"
 #include "http_server.h"
@@ -13,7 +14,7 @@ static const char *TAG = "main";
 void app_main(void)
 {
     ESP_LOGI(TAG, "=== Autopilot ESP32-CAM ===");
-    ESP_LOGI(TAG, "Firmware version: 0.5.0 (M4 WS Control + Heartbeat)");
+    ESP_LOGI(TAG, "Firmware version: 0.6.0 (M5 Stability)");
 
     /* Initialize WiFi and connect */
     esp_err_t ret = wifi_manager_init();
@@ -56,8 +57,16 @@ void app_main(void)
 
     ESP_LOGI(TAG, "System ready — http://%s/", wifi_manager_get_ip());
 
-    /* Main loop */
+    /* Main loop — periodic heap logging for M5 stability monitoring */
+    int heap_log_counter = 0;
     while (1) {
         vTaskDelay(pdMS_TO_TICKS(1000));
+        heap_log_counter++;
+        if (heap_log_counter % 30 == 0) {
+            ESP_LOGI(TAG, "heap free=%lu min=%lu uptime=%ds",
+                     (unsigned long)esp_get_free_heap_size(),
+                     (unsigned long)esp_get_minimum_free_heap_size(),
+                     heap_log_counter);
+        }
     }
 }
