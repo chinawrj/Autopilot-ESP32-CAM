@@ -18,7 +18,7 @@
 - ESP-IDF 已安装
 - 目标路由器 SSID 和密码已知
 
-## 凭据存储位置
+### 凭据存储位置
 
 凭据存储在**仓库之外的固定位置**，不被 Git 跟踪：
 
@@ -149,7 +149,7 @@ sdkconfig.old
 !sdkconfig.defaults
 ```
 
-## 验证清单
+### 验证清单
 
 - [ ] `~/.esp-wifi-credentials` 存在且权限为 600
 - [ ] `sdkconfig` 在 `.gitignore` 中

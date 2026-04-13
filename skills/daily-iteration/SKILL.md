@@ -4,7 +4,13 @@
 
 驱动 Agent 以"每天一轮"的节奏推进项目。每次 Agent 被调用视为一个工作日。
 
-## 工作日流程
+
+## 前置条件
+
+- Git 已初始化
+- `docs/TARGET.md` 存在（里程碑定义）
+- `docs/daily-logs/TEMPLATE.md` 存在
+## 操作步骤
 
 ### 1. 开始 (Morning)
 
@@ -83,12 +89,6 @@ echo "Free heap: check serial monitor"
 
 如果任一指标超过阈值，在 daily-log 的"明日计划"中标记: `⚠️ 触发重构日`
 
-
-## 前置条件
-
-- Git 已初始化
-- `docs/TARGET.md` 存在（里程碑定义）
-- `docs/daily-logs/TEMPLATE.md` 存在
 
 ## Self-Test（自检）
 
