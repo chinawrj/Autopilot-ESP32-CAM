@@ -128,3 +128,9 @@ bool wifi_manager_is_connected(void)
 {
     return s_is_connected;
 }
+
+void wifi_manager_disconnect(void)
+{
+    ESP_LOGW(TAG, "Forced WiFi disconnect (debug)");
+    esp_wifi_disconnect();
+}

@@ -23,4 +23,9 @@ const char *wifi_manager_get_ip(void);
  */
 bool wifi_manager_is_connected(void);
 
+/**
+ * Force disconnect WiFi (for testing reconnect logic).
+ */
+void wifi_manager_disconnect(void);
+
 #endif /* WIFI_MANAGER_H */

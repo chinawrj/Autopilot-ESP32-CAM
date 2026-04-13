@@ -16,6 +16,8 @@
 #include "cJSON.h"
 #include "esp_system.h"
 
+#include "wifi_manager.h"
+
 static const char *TAG = "httpd";
 
 /* MJPEG boundary */
@@ -173,6 +175,13 @@ static esp_err_t led_handler(httpd_req_t *req)
     return res;
 }
 
+static esp_err_t debug_wifi_disconnect_handler(httpd_req_t *req)
+{
+    wifi_manager_disconnect();
+    httpd_resp_set_type(req, "application/json");
+    return httpd_resp_sendstr(req, "{\"status\":\"disconnected\"}");
+}
+
 esp_err_t http_server_start(void)
 {
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
@@ -237,6 +246,14 @@ esp_err_t http_server_start(void)
         .is_websocket = true,
     };
     httpd_register_uri_handler(server, &ws_stream_uri);
+
+    /* POST /api/debug/wifi-disconnect (testing only) */
+    httpd_uri_t wifi_dc_uri = {
+        .uri      = "/api/debug/wifi-disconnect",
+        .method   = HTTP_POST,
+        .handler  = debug_wifi_disconnect_handler,
+    };
+    httpd_register_uri_handler(server, &wifi_dc_uri);
 
     ESP_LOGI(TAG, "HTTP server started on port %d", config.server_port);
     return ESP_OK;
