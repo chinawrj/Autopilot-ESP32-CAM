@@ -4,9 +4,9 @@ IP=192.168.1.171
 
 echo "=== Multi-Client Stability Test ==="
 
-# 1. Start 1 MJPEG stream consumer (port 81)
+# 1. Start 1 MJPEG stream consumer (port 8081)
 echo "[1] Starting MJPEG consumer..."
-curl -s --max-time 60 -o /dev/null "http://$IP:81/stream/tcp" &
+curl -s --max-time 60 -o /dev/null "http://$IP:8081/stream/tcp" &
 MJPEG_PID=$!
 
 # 2. Start 3 API pollers (simulating concurrent clients)

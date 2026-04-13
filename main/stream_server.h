@@ -4,7 +4,7 @@
 #include "esp_err.h"
 
 /**
- * Start the MJPEG streaming HTTP server on port 81.
+ * Start the MJPEG streaming HTTP server on port 8081.
  * Runs in a separate httpd instance to avoid blocking the main API server.
  */
 esp_err_t stream_server_start(void);

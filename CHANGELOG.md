@@ -19,7 +19,7 @@ All notable changes to Autopilot ESP32-CAM are documented in this file.
 
 ### 🏗️ Architecture Changes
 
-- **Dual HTTP Server** — Port 80 (API + pages + WebSocket) / Port 81 (MJPEG stream)
+- **Dual HTTP Server** — Port 80 (API + pages + WebSocket) / Port 8081 (MJPEG stream)
   - Fixes MJPEG stream blocking API responses on single-server architecture
   - `stream_server.c` extracted as independent MJPEG server module
 
@@ -27,6 +27,7 @@ All notable changes to Autopilot ESP32-CAM are documented in this file.
 
 - **Camera I2C recovery after OTA reboot** — `esp_camera_deinit()` before `esp_restart()` to properly release I2C bus; prevents OV2640 probe timeout after software reset
 - **Camera PWDN power-cycle timing** — Extended to 500ms + I2C bus recovery (clock pulse bit-banging) for reliable camera init after any restart path
+- **MJPEG stream port** — Changed from 81 to 8081 to avoid transparent HTTP proxy interception on common low ports
 
 ### 📊 Performance
 

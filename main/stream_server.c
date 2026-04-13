@@ -75,7 +75,7 @@ static esp_err_t stream_tcp_handler(httpd_req_t *req)
 esp_err_t stream_server_start(void)
 {
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-    config.server_port = 81;
+    config.server_port = 8081;
     config.ctrl_port = 32769;
     config.max_uri_handlers = 2;
     config.stack_size = 8192;
@@ -91,6 +91,6 @@ esp_err_t stream_server_start(void)
     httpd_register_uri_handler(server, &(httpd_uri_t){
         .uri = "/stream/tcp", .method = HTTP_GET, .handler = stream_tcp_handler});
 
-    ESP_LOGI(TAG, "MJPEG stream server started on port 81");
+    ESP_LOGI(TAG, "MJPEG stream server started on port 8081");
     return ESP_OK;
 }

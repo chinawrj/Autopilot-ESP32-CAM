@@ -93,7 +93,7 @@ select{padding:7px;font-size:12px;border:2px solid #555;border-radius:4px;backgr
 var mode='tcp', ws=null, ledState=false;
 var wsFc=0, wsLastT=Date.now(), wsFps=0;
 var canvas=document.getElementById('ws-canvas'), ctx=canvas.getContext('2d');
-var streamUrl='http://'+location.hostname+':81/stream/tcp';
+var streamUrl='http://'+location.hostname+':8081/stream/tcp';
 document.getElementById('tcp-view').src=streamUrl;
 
 function switchMode(m) {

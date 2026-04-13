@@ -58,10 +58,10 @@ uptime_el = page.query_selector("#si-uptime")
 uptime_text = uptime_el.inner_text() if uptime_el else "0"
 check("Uptime > 0", uptime_text != "0" and uptime_text != "", f"({uptime_text})")
 
-# Check TCP stream is loading (img should have src with port 81)
+# Check TCP stream is loading (img should have src with port 8081)
 tcp_img = page.query_selector("#tcp-view")
 tcp_src = tcp_img.get_attribute("src") if tcp_img else ""
-check("TCP stream src has :81", ":81" in tcp_src, f"({tcp_src[:60]})")
+check("TCP stream src has :8081", ":8081" in tcp_src, f"({tcp_src[:60]})")
 
 page.screenshot(path="/tmp/day18_tcp.png")
 print("  Screenshot: /tmp/day18_tcp.png")

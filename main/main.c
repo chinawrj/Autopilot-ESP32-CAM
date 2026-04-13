@@ -57,7 +57,7 @@ void app_main(void)
         return;
     }
 
-    /* Start stream server (port 81 — MJPEG) */
+    /* Start stream server (port 8081 — MJPEG) */
     ret = stream_server_start();
     if (ret != ESP_OK) {
         ESP_LOGW(TAG, "Stream server start failed (non-fatal)");
