@@ -59,16 +59,12 @@ static esp_err_t index_handler(httpd_req_t *req)
     return httpd_resp_send(req, index_html_start, len);
 }
 
-/* --- GET /stream/udp page handler --- */
-
 static esp_err_t stream_udp_page_handler(httpd_req_t *req)
 {
     size_t len = stream_udp_html_end - stream_udp_html_start;
     httpd_resp_set_type(req, "text/html");
     return httpd_resp_send(req, stream_udp_html_start, len);
 }
-
-/* --- httpd close callback --- */
 
 static void httpd_close_fn(httpd_handle_t hd, int fd)
 {

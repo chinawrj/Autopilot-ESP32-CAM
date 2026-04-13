@@ -83,24 +83,27 @@
 
 ---
 
-### M4: UDP 视频流 ⬜ Not Started
+### M4: UDP 视频流 🔄 In Progress
 > **目标日**: Day 7-9
 
 - [ ] UDP 推送端 (udp_stream.c)
   - [ ] JPEG 帧分片 (MTU 1400)
   - [ ] 序列号 + 帧号头
   - [ ] 丢帧容忍
-- [ ] WebSocket 控制通道
-  - [ ] 客户端发送: {action: "start_udp", port: XXXX}
-  - [ ] 服务端回送: {status, fps, frame_count}
+- [x] WebSocket 视频流通道 (ws_stream.c)
+  - [x] WebSocket binary frame 推送 JPEG (Day 7 实现)
+  - [x] 最多 4 客户端并发
+  - [x] httpd close callback 自动清理
+  - [ ] 控制消息: start/stop/quality
   - [ ] 心跳机制
-- [ ] 前端 `/stream/udp` 页面
-  - [ ] WebSocket 连接管理
-  - [ ] UDP 帧接收 + 重组 (WebRTC DataChannel 或 WebSocket fallback)
-  - [ ] Canvas 渲染
-- [ ] TCP 和 UDP 双路径并存不冲突
+- [x] 前端 `/stream/udp` 页面 (Day 7)
+  - [x] WebSocket 连接管理 + 自动重连
+  - [x] Canvas 渲染 (Blob → Image → drawImage)
+  - [x] HUD 叠加: FPS + 温度 + WS 状态
+  - [x] LED 控制按钮
+- [x] TCP 和 WS 双路径并存不冲突 (Day 7 验证通过)
 
-**完成标志**: `/stream/tcp` 和 `/stream/udp` 都可独立访问
+**完成标志**: `/stream/tcp` 和 `/stream/udp` 都可独立访问 — ✅ Day 7 验证通过
 
 ---
 
