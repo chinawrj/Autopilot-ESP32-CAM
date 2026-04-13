@@ -13,7 +13,7 @@ static const char *TAG = "main";
 void app_main(void)
 {
     ESP_LOGI(TAG, "=== Autopilot ESP32-CAM ===");
-    ESP_LOGI(TAG, "Firmware version: 0.4.0 (M4 WS Stream)");
+    ESP_LOGI(TAG, "Firmware version: 0.5.0 (M4 WS Control + Heartbeat)");
 
     /* Initialize WiFi and connect */
     esp_err_t ret = wifi_manager_init();

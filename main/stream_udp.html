@@ -45,6 +45,12 @@ canvas { display: block; background: #000; max-width: 90vw; max-height: 70vh; }
 }
 .led-btn.on { border-color: #0f0; color: #0f0; }
 .led-btn.off { border-color: #f00; color: #f00; }
+select {
+    padding: 8px; font-size: 13px;
+    border: 2px solid #555; border-radius: 4px;
+    background: #333; color: #eee;
+    cursor: pointer;
+}
 .status-bar { font-size: 12px; color: #888; margin-top: 8px; }
 </style>
 </head>
@@ -56,11 +62,25 @@ canvas { display: block; background: #000; max-width: 90vw; max-height: 70vh; }
     <div class="hud">
         <span id="hud-fps">FPS: --</span>
         <span id="hud-temp">TEMP: --.--&deg;C</span>
+        <span id="hud-heap">HEAP: --KB</span>
         <span id="hud-ws">WS: connecting</span>
     </div>
 </div>
 <div class="controls">
     <button id="led-btn" class="led-btn off" onclick="toggleLed()">&#x1F534; LED OFF</button>
+    <select id="sel-quality" onchange="setQuality(this.value)" title="JPEG Quality">
+        <option value="10">Q:10 Best</option>
+        <option value="12" selected>Q:12</option>
+        <option value="20">Q:20</option>
+        <option value="30">Q:30</option>
+        <option value="50">Q:50 Fast</option>
+    </select>
+    <select id="sel-res" onchange="setResolution(this.value)" title="Resolution">
+        <option value="QVGA">QVGA 320x240</option>
+        <option value="VGA" selected>VGA 640x480</option>
+        <option value="SVGA">SVGA 800x600</option>
+        <option value="XGA">XGA 1024x768</option>
+    </select>
 </div>
 <div class="status-bar" id="status">Connecting WebSocket...</div>
 
@@ -83,6 +103,20 @@ function connectWs() {
     };
 
     ws.onmessage = function(evt) {
+        if (typeof evt.data === 'string') {
+            try {
+                var msg = JSON.parse(evt.data);
+                if (msg.type === 'heartbeat' || msg.type === 'status') {
+                    document.getElementById('hud-heap').textContent =
+                        'HEAP: ' + Math.round(msg.heap_free / 1024) + 'KB';
+                    document.getElementById('status').textContent =
+                        'Clients: ' + msg.clients + ' | Heap: ' +
+                        Math.round(msg.heap_free / 1024) + 'KB / min ' +
+                        Math.round(msg.heap_min / 1024) + 'KB';
+                }
+            } catch(e) {}
+            return;
+        }
         if (evt.data instanceof ArrayBuffer) {
             var blob = new Blob([evt.data], {type: 'image/jpeg'});
             var url = URL.createObjectURL(blob);
@@ -147,6 +181,12 @@ function toggleLed() {
         body: JSON.stringify({state: 'toggle'})
     }).then(function() { updateStatus(); }).catch(function() {});
 }
+
+function wsSend(obj) {
+    if (ws && ws.readyState === 1) ws.send(JSON.stringify(obj));
+}
+function setQuality(val) { wsSend({action:'set_quality', value:parseInt(val)}); }
+function setResolution(val) { wsSend({action:'set_resolution', value:val}); }
 
 connectWs();
 setInterval(updateFps, 500);

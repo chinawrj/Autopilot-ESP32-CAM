@@ -7,12 +7,15 @@
 #include "esp_camera.h"
 #include "esp_log.h"
 #include "esp_timer.h"
+#include "esp_system.h"
+#include "cJSON.h"
 
 static const char *TAG = "ws_stream";
 
 #define MAX_WS_CLIENTS  4
 #define WS_TASK_STACK   4096
 #define WS_TASK_PRIO    5
+#define HEARTBEAT_US    5000000  /* 5 seconds */
 
 static httpd_handle_t s_server = NULL;
 static int s_client_fds[MAX_WS_CLIENTS];
@@ -20,10 +23,10 @@ static int s_client_count = 0;
 static SemaphoreHandle_t s_mutex = NULL;
 static TaskHandle_t s_task_handle = NULL;
 
-/* FPS tracking */
 static float s_ws_fps = 0.0f;
 static int s_frame_count = 0;
 static int64_t s_last_fps_time = 0;
+static int64_t s_last_hb_time = 0;
 
 static void update_ws_fps(void)
 {
@@ -42,15 +45,49 @@ float ws_stream_get_fps(void)
     return s_ws_fps;
 }
 
-/* --- Streaming task: capture frames and push to all WS clients --- */
+static volatile bool s_hb_now = false;
+
+static void handle_control(const char *msg)
+{
+    cJSON *root = cJSON_Parse(msg);
+    if (!root) return;
+
+    cJSON *action = cJSON_GetObjectItem(root, "action");
+    if (!cJSON_IsString(action)) { cJSON_Delete(root); return; }
+
+    const char *act = action->valuestring;
+    if (strcmp(act, "set_quality") == 0) {
+        cJSON *val = cJSON_GetObjectItem(root, "value");
+        if (cJSON_IsNumber(val) && val->valueint >= 4 && val->valueint <= 63) {
+            sensor_t *s = esp_camera_sensor_get();
+            if (s) s->set_quality(s, val->valueint);
+            ESP_LOGI(TAG, "Quality -> %d", val->valueint);
+        }
+    } else if (strcmp(act, "set_resolution") == 0) {
+        cJSON *val = cJSON_GetObjectItem(root, "value");
+        if (cJSON_IsString(val)) {
+            framesize_t fs = FRAMESIZE_VGA;
+            const char *res = val->valuestring;
+            if (strcmp(res, "QVGA") == 0) fs = FRAMESIZE_QVGA;
+            else if (strcmp(res, "SVGA") == 0) fs = FRAMESIZE_SVGA;
+            else if (strcmp(res, "XGA") == 0) fs = FRAMESIZE_XGA;
+            sensor_t *s = esp_camera_sensor_get();
+            if (s) s->set_framesize(s, fs);
+            ESP_LOGI(TAG, "Resolution -> %s", res);
+        }
+    } else if (strcmp(act, "get_status") == 0) {
+        s_hb_now = true;
+    }
+    cJSON_Delete(root);
+}
 
 static void ws_stream_task(void *pvParam)
 {
     ESP_LOGI(TAG, "Streaming task started");
     s_last_fps_time = esp_timer_get_time();
+    s_last_hb_time = s_last_fps_time;
 
     while (true) {
-        /* Check if any clients are connected */
         xSemaphoreTake(s_mutex, portMAX_DELAY);
         int count = s_client_count;
         xSemaphoreGive(s_mutex);
@@ -75,7 +112,6 @@ static void ws_stream_task(void *pvParam)
             .len        = fb->len,
         };
 
-        /* Copy client FD list under lock, then send without lock */
         int fds[MAX_WS_CLIENTS];
         xSemaphoreTake(s_mutex, portMAX_DELAY);
         int n = s_client_count;
@@ -85,7 +121,6 @@ static void ws_stream_task(void *pvParam)
         for (int i = 0; i < n; i++) {
             esp_err_t ret = httpd_ws_send_frame_async(s_server, fds[i], &ws_pkt);
             if (ret != ESP_OK) {
-                /* Remove failed client */
                 xSemaphoreTake(s_mutex, portMAX_DELAY);
                 for (int j = 0; j < s_client_count; j++) {
                     if (s_client_fds[j] == fds[i]) {
@@ -102,10 +137,29 @@ static void ws_stream_task(void *pvParam)
 
         esp_camera_fb_return(fb);
         update_ws_fps();
+
+        /* Heartbeat: push status JSON periodically or on demand */
+        int64_t now_hb = esp_timer_get_time();
+        if (s_hb_now || now_hb - s_last_hb_time >= HEARTBEAT_US) {
+            s_hb_now = false;
+            s_last_hb_time = now_hb;
+            char hb[160];
+            int hb_len = snprintf(hb, sizeof(hb),
+                "{\"type\":\"heartbeat\",\"fps\":%.1f,\"clients\":%d,"
+                "\"heap_free\":%lu,\"heap_min\":%lu}",
+                s_ws_fps, n,
+                (unsigned long)esp_get_free_heap_size(),
+                (unsigned long)esp_get_minimum_free_heap_size());
+            httpd_ws_frame_t hb_pkt = {
+                .final = true, .type = HTTPD_WS_TYPE_TEXT,
+                .payload = (uint8_t *)hb, .len = hb_len,
+            };
+            for (int i = 0; i < n; i++) {
+                httpd_ws_send_frame_async(s_server, fds[i], &hb_pkt);
+            }
+        }
     }
 }
-
-/* --- Public API --- */
 
 esp_err_t ws_stream_init(void)
 {
@@ -130,7 +184,6 @@ esp_err_t ws_stream_init(void)
 esp_err_t ws_stream_handler(httpd_req_t *req)
 {
     if (req->method == HTTP_GET) {
-        /* Initial WebSocket handshake — register this client */
         int fd = httpd_req_to_sockfd(req);
         s_server = req->handle;
 
@@ -148,20 +201,18 @@ esp_err_t ws_stream_handler(httpd_req_t *req)
 
     /* Handle incoming WS frames (text = control, binary = ignored) */
     httpd_ws_frame_t frame;
-    uint8_t buf[128];
+    uint8_t buf[256];
     memset(&frame, 0, sizeof(frame));
     frame.payload = buf;
 
     esp_err_t ret = httpd_ws_recv_frame(req, &frame, sizeof(buf) - 1);
-    if (ret != ESP_OK) {
-        return ret;
-    }
+    if (ret != ESP_OK) return ret;
 
     if (frame.type == HTTPD_WS_TYPE_TEXT) {
         buf[frame.len] = '\0';
-        ESP_LOGI(TAG, "Control msg: %s", (char *)buf);
+        ESP_LOGI(TAG, "Control: %s", (char *)buf);
+        handle_control((const char *)buf);
     }
-
     return ESP_OK;
 }
 

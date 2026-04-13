@@ -14,6 +14,7 @@
 #include "led_controller.h"
 #include "ws_stream.h"
 #include "cJSON.h"
+#include "esp_system.h"
 
 static const char *TAG = "httpd";
 
@@ -72,8 +73,6 @@ static void httpd_close_fn(httpd_handle_t hd, int fd)
     close(fd);
 }
 
-/* --- MJPEG stream handler --- */
-
 static esp_err_t stream_tcp_handler(httpd_req_t *req)
 {
     esp_err_t res;
@@ -113,14 +112,14 @@ static esp_err_t stream_tcp_handler(httpd_req_t *req)
     return ESP_OK;  /* Client disconnect is normal, not an error */
 }
 
-/* --- GET /api/status handler --- */
-
 static esp_err_t status_handler(httpd_req_t *req)
 {
     cJSON *root = cJSON_CreateObject();
     cJSON_AddNumberToObject(root, "fps", s_fps);
     cJSON_AddNumberToObject(root, "temperature", virtual_sensor_get_temperature());
     cJSON_AddBoolToObject(root, "led_state", led_get_state());
+    cJSON_AddNumberToObject(root, "heap_free", esp_get_free_heap_size());
+    cJSON_AddNumberToObject(root, "heap_min", esp_get_minimum_free_heap_size());
 
     const char *json = cJSON_PrintUnformatted(root);
     httpd_resp_set_type(req, "application/json");
@@ -131,8 +130,6 @@ static esp_err_t status_handler(httpd_req_t *req)
     cJSON_Delete(root);
     return res;
 }
-
-/* --- POST /api/led handler --- */
 
 static esp_err_t led_handler(httpd_req_t *req)
 {
@@ -175,8 +172,6 @@ static esp_err_t led_handler(httpd_req_t *req)
     cJSON_Delete(resp);
     return res;
 }
-
-/* --- Server startup --- */
 
 esp_err_t http_server_start(void)
 {
