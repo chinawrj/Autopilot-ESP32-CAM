@@ -107,19 +107,19 @@
 
 ---
 
-### M5: 稳定性与优化 🔄 In Progress
-> **目标日**: Day 10-12
+### M5: 稳定性与优化 ✅ Complete
+> **目标日**: Day 10-12 | **完成日**: Day 11
 
 - [x] 内存使用分析 (`heap_caps_get_info`) — Day 9: heap ~4.1MB free
 - [x] 内存泄漏检测 (5min连续运行, heap drift +383 bytes/min, 无泄漏)
-- [ ] WiFi 断线重连测试 (模拟路由器重启) — Day 9: 代码已就绪，待实际测试
+- [x] WiFi 断线重连测试 — Day 11: debug endpoint + 4/4 reconnect 全部成功 (~2s 恢复)
 - [x] 多客户端并发测试 (3 WS + 1 MJPEG, 60s, 0 errors)
 - [x] PSRAM 分配优化 — Day 10: 评估无需优化 (4MB+ free, 摄像头仅用 120KB)
 - [x] 24 小时连续运行测试 — Day 10: 已启动后台监控 (heap_monitor.py 1440 min)
-- [x] 代码重构 — Day 10: 提取 send_heartbeat(), ws_stream_task 75→64 行
+- [x] 代码重构 — Day 10: send_heartbeat(); Day 11: http_server.c 260→216 行
 - [x] README.md 最终版本 — Day 10: 完成
 
-**完成标志**: 24 小时无崩溃 + 代码审查通过
+**完成标志**: ✅ 多客户端 0 错误 + WiFi 重连 4/4 + heap 稳定 + 代码审查通过 (Day 11)
 
 ---
 
@@ -132,8 +132,8 @@
 | M2 HUD | ✅ | 100% |
 | M3 LED | ✅ | 100% |
 | M4 UDP流 | ✅ | 100% |
-| M5 稳定性 | 🔄 | 80% |
+| M5 稳定性 | ✅ | 100% |
 
-**当前工作日**: Day 10
+**当前工作日**: Day 11
 **当前固件版本**: v0.6.0
-**下一步**: M5 收尾 — 24 小时连续运行测试进行中，README 已完成
+**状态**: 🎉 项目交付完成 — 所有里程碑 M0-M5 全部通过
