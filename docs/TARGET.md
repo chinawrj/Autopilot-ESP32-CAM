@@ -123,6 +123,20 @@
 
 ---
 
+### Release: 发布准备 ✅ Complete
+> **目标日**: Day 12-13 | **完成日**: Day 12
+
+- [x] Web UI 截图 (4 张: MJPEG / WebSocket / LED / API)
+- [x] 双语 README (README.md 英文 + README_CN.md 中文)
+- [x] CHANGELOG.md (v1.0.0 release notes)
+- [x] 架构图 (Mermaid, 嵌入 README)
+- [x] 截图工具 (tools/take_screenshots.py)
+- [ ] GitHub Release 创建 (Day 13)
+
+**完成标志**: ✅ 中英文 README 图文并茂 + CHANGELOG 完成 (Day 12)
+
+---
+
 ## 当前状态
 
 | 里程碑 | 状态 | 进度 |
@@ -133,7 +147,8 @@
 | M3 LED | ✅ | 100% |
 | M4 UDP流 | ✅ | 100% |
 | M5 稳定性 | ✅ | 100% |
+| Release 准备 | ✅ | 100% |
 
-**当前工作日**: Day 11
-**当前固件版本**: v0.6.0
-**状态**: 🎉 项目交付完成 — 所有里程碑 M0-M5 全部通过
+**当前工作日**: Day 12
+**当前固件版本**: v1.0.0-rc1
+**状态**: 📦 Release 准备完成 — 等待 Day 13 正式发布
