@@ -9,6 +9,7 @@
 #include "esp_timer.h"
 #include "esp_system.h"
 #include "cJSON.h"
+#include "fps_counter.h"
 
 static const char *TAG = "ws_stream";
 
@@ -23,26 +24,12 @@ static int s_client_count = 0;
 static SemaphoreHandle_t s_mutex = NULL;
 static TaskHandle_t s_task_handle = NULL;
 
-static float s_ws_fps = 0.0f;
-static int s_frame_count = 0;
-static int64_t s_last_fps_time = 0;
+static fps_counter_t s_fps_ctx;
 static int64_t s_last_hb_time = 0;
-
-static void update_ws_fps(void)
-{
-    s_frame_count++;
-    int64_t now = esp_timer_get_time();
-    int64_t elapsed = now - s_last_fps_time;
-    if (elapsed >= 1000000) {
-        s_ws_fps = (float)s_frame_count * 1000000.0f / (float)elapsed;
-        s_frame_count = 0;
-        s_last_fps_time = now;
-    }
-}
 
 float ws_stream_get_fps(void)
 {
-    return s_ws_fps;
+    return fps_counter_get_fps(&s_fps_ctx);
 }
 
 static volatile bool s_hb_now = false;
@@ -89,7 +76,7 @@ static void send_heartbeat(int *fds, int n)
     int hb_len = snprintf(hb, sizeof(hb),
         "{\"type\":\"heartbeat\",\"fps\":%.1f,\"clients\":%d,"
         "\"heap_free\":%lu,\"heap_min\":%lu}",
-        s_ws_fps, n,
+        fps_counter_get_fps(&s_fps_ctx), n,
         (unsigned long)esp_get_free_heap_size(),
         (unsigned long)esp_get_minimum_free_heap_size());
     httpd_ws_frame_t hb_pkt = {
@@ -104,8 +91,8 @@ static void send_heartbeat(int *fds, int n)
 static void ws_stream_task(void *pvParam)
 {
     ESP_LOGI(TAG, "Streaming task started");
-    s_last_fps_time = esp_timer_get_time();
-    s_last_hb_time = s_last_fps_time;
+    fps_counter_reset(&s_fps_ctx, esp_timer_get_time());
+    s_last_hb_time = esp_timer_get_time();
 
     while (true) {
         xSemaphoreTake(s_mutex, portMAX_DELAY);
@@ -156,7 +143,7 @@ static void ws_stream_task(void *pvParam)
         }
 
         esp_camera_fb_return(fb);
-        update_ws_fps();
+        fps_counter_update(&s_fps_ctx, esp_timer_get_time());
 
         /* Heartbeat: push status JSON periodically or on demand */
         int64_t now_hb = esp_timer_get_time();

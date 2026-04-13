@@ -4,6 +4,7 @@
 #include "esp_camera.h"
 #include "esp_log.h"
 #include "esp_timer.h"
+#include "fps_counter.h"
 
 static const char *TAG = "stream_srv";
 
@@ -11,26 +12,11 @@ static const char *TAG = "stream_srv";
 #define MJPEG_CT        "multipart/x-mixed-replace;boundary=" MJPEG_BOUNDARY
 #define MJPEG_PART_HDR  "\r\n--" MJPEG_BOUNDARY "\r\nContent-Type: image/jpeg\r\nContent-Length: %zu\r\n\r\n"
 
-/* FPS tracking */
-static float s_fps = 0.0f;
-static int64_t s_last_fps_time = 0;
-static int s_frame_count = 0;
-
-static void update_fps(void)
-{
-    s_frame_count++;
-    int64_t now = esp_timer_get_time();
-    int64_t elapsed = now - s_last_fps_time;
-    if (elapsed >= 1000000) {
-        s_fps = (float)s_frame_count * 1000000.0f / (float)elapsed;
-        s_frame_count = 0;
-        s_last_fps_time = now;
-    }
-}
+static fps_counter_t s_fps_ctx;
 
 float stream_server_get_fps(void)
 {
-    return s_fps;
+    return fps_counter_get_fps(&s_fps_ctx);
 }
 
 static esp_err_t stream_tcp_handler(httpd_req_t *req)
@@ -43,8 +29,7 @@ static esp_err_t stream_tcp_handler(httpd_req_t *req)
     httpd_resp_set_hdr(req, "X-Framerate", "25");
 
     ESP_LOGI(TAG, "MJPEG stream started for %d", httpd_req_to_sockfd(req));
-    s_last_fps_time = esp_timer_get_time();
-    s_frame_count = 0;
+    fps_counter_reset(&s_fps_ctx, esp_timer_get_time());
 
     while (true) {
         camera_fb_t *fb = esp_camera_fb_get();
@@ -62,7 +47,7 @@ static esp_err_t stream_tcp_handler(httpd_req_t *req)
         }
 
         esp_camera_fb_return(fb);
-        update_fps();
+        fps_counter_update(&s_fps_ctx, esp_timer_get_time());
 
         if (res != ESP_OK) {
             ESP_LOGI(TAG, "MJPEG stream ended (client disconnected)");

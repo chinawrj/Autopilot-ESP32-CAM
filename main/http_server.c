@@ -14,6 +14,7 @@
 #include "wifi_manager.h"
 #include "ota_update.h"
 #include "stream_server.h"
+#include "http_helpers.h"
 
 static const char *TAG = "httpd";
 
@@ -69,14 +70,7 @@ static esp_err_t status_handler(httpd_req_t *req)
     cJSON_AddNumberToObject(root, "rssi", wifi_manager_get_rssi());
     cJSON_AddBoolToObject(root, "wifi_connected", wifi_manager_is_connected());
 
-    const char *json = cJSON_PrintUnformatted(root);
-    httpd_resp_set_type(req, "application/json");
-    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
-    esp_err_t res = httpd_resp_sendstr(req, json);
-
-    cJSON_free((void *)json);
-    cJSON_Delete(root);
-    return res;
+    return http_send_json(req, root);
 }
 
 static esp_err_t led_handler(httpd_req_t *req)
@@ -110,15 +104,7 @@ static esp_err_t led_handler(httpd_req_t *req)
     /* Respond with current state */
     cJSON *resp = cJSON_CreateObject();
     cJSON_AddBoolToObject(resp, "led_state", led_get_state());
-    const char *json = cJSON_PrintUnformatted(resp);
-
-    httpd_resp_set_type(req, "application/json");
-    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
-    esp_err_t res = httpd_resp_sendstr(req, json);
-
-    cJSON_free((void *)json);
-    cJSON_Delete(resp);
-    return res;
+    return http_send_json(req, resp);
 }
 
 static esp_err_t debug_wifi_disconnect_handler(httpd_req_t *req)
@@ -162,12 +148,7 @@ static esp_err_t ota_handler(httpd_req_t *req)
         cJSON_AddStringToObject(resp, "error", esp_err_to_name(err));
     }
 
-    const char *json = cJSON_PrintUnformatted(resp);
-    httpd_resp_set_type(req, "application/json");
-    esp_err_t res = httpd_resp_sendstr(req, json);
-    cJSON_free((void *)json);
-    cJSON_Delete(resp);
-    return res;
+    return http_send_json(req, resp);
 }
 
 static esp_err_t ota_status_handler(httpd_req_t *req)
@@ -178,13 +159,7 @@ static esp_err_t ota_status_handler(httpd_req_t *req)
     cJSON_AddStringToObject(root, "status", ota_get_status());
     cJSON_AddStringToObject(root, "version", ota_get_version());
 
-    const char *json = cJSON_PrintUnformatted(root);
-    httpd_resp_set_type(req, "application/json");
-    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
-    esp_err_t res = httpd_resp_sendstr(req, json);
-    cJSON_free((void *)json);
-    cJSON_Delete(root);
-    return res;
+    return http_send_json(req, root);
 }
 
 /* --- Camera settings API --- */
@@ -206,13 +181,7 @@ static esp_err_t camera_get_handler(httpd_req_t *req)
     cJSON_AddNumberToObject(root, "quality", s->status.quality);
     cJSON_AddNumberToObject(root, "framesize", s->status.framesize);
 
-    const char *json = cJSON_PrintUnformatted(root);
-    httpd_resp_set_type(req, "application/json");
-    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
-    esp_err_t res = httpd_resp_sendstr(req, json);
-    cJSON_free((void *)json);
-    cJSON_Delete(root);
-    return res;
+    return http_send_json(req, root);
 }
 
 static esp_err_t camera_set_handler(httpd_req_t *req)
