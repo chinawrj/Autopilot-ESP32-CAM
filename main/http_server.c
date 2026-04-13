@@ -92,7 +92,7 @@ static esp_err_t stream_tcp_handler(httpd_req_t *req)
             break;
         }
     }
-    return res;
+    return ESP_OK;  /* Client disconnect is normal, not an error */
 }
 
 /* --- GET /api/status handler --- */
