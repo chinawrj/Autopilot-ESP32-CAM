@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Take screenshots of ESP32-CAM web pages for release documentation."""
 import os
+import signal
 import sys
 import time
 
@@ -35,15 +36,18 @@ def take_screenshot(context, url, path, wait_secs=5, action=None):
         page.close()
 
 try:
-    # Screenshot 1: MJPEG stream page
-    print(f"[1/4] Opening MJPEG page: http://{DEVICE_IP}/")
+    # Screenshot 1: Unified dashboard — TCP tab (default)
+    print(f"[1/4] Dashboard (TCP tab): http://{DEVICE_IP}/")
     path1 = os.path.join(SCREENSHOT_DIR, "mjpeg-stream.png")
     take_screenshot(context, f"http://{DEVICE_IP}/", path1, wait_secs=5)
 
-    # Screenshot 2: WebSocket stream page
-    print(f"[2/4] Opening WebSocket page: http://{DEVICE_IP}/stream/ws")
+    # Screenshot 2: Unified dashboard — WS tab
+    print(f"[2/4] Dashboard (WS tab): http://{DEVICE_IP}/")
     path2 = os.path.join(SCREENSHOT_DIR, "ws-stream.png")
-    take_screenshot(context, f"http://{DEVICE_IP}/stream/ws", path2, wait_secs=5)
+    def switch_to_ws(page):
+        page.click(".tab >> text=WS Stream")
+        time.sleep(5)
+    take_screenshot(context, f"http://{DEVICE_IP}/", path2, wait_secs=3, action=switch_to_ws)
 
     # Screenshot 3: LED ON state
     print("[3/4] Toggling LED ON for screenshot...")
@@ -67,8 +71,16 @@ try:
     take_screenshot(context, f"http://{DEVICE_IP}/api/status", path4, wait_secs=1)
 
     print("\nAll screenshots saved to docs/images/")
-    print("Done!")
+    print("Done! Browser stays open.")
 
+    # Keep browser open per patchright rules
+    signal.signal(signal.SIGINT, lambda *_: None)
+    signal.signal(signal.SIGTERM, lambda *_: None)
+    while True:
+        time.sleep(3600)
+
+except (KeyboardInterrupt, SystemExit):
+    pass
 finally:
     context.close()
     pw.stop()
