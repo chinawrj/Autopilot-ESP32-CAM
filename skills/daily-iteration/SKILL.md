@@ -1,133 +1,199 @@
-# Skill: 每日迭代开发
+# Skill: 每日迭代工作流
 
 ## 用途
 
-驱动 Agent 以"每天一轮"的节奏推进项目。每次 Agent 被调用视为一个工作日。
+定义 AI agent 驱动的每日开发迭代流程，包括计划制定、任务执行、进度验证和日报输出。
 
+**何时使用：**
+- 需要结构化的开发节奏
+- 项目周期超过 1 天
+- 需要跟踪进度和里程碑
+
+**何时不使用：**
+- 一次性小任务
+- 不需要迭代的简单项目
 
 ## 前置条件
 
-- Git 已初始化
-- `docs/TARGET.md` 存在（里程碑定义）
-- `docs/daily-logs/TEMPLATE.md` 存在
+- 项目需求文档已确定（`requirements.md`）
+- 工作流 Agent 已配置
+- 开发环境已就绪
+
 ## 操作步骤
 
-### 1. 开始 (Morning)
+### 1. 每日迭代模型
 
-```bash
-# 检查当前进度
-cat docs/TARGET.md
-ls docs/daily-logs/
-
-# 确定当前日期编号 (最大已有编号 + 1)
-NEXT_DAY=$(ls docs/daily-logs/day-*.md 2>/dev/null | sort -V | tail -1 | grep -oE '[0-9]+' | tail -1)
-NEXT_DAY=$((${NEXT_DAY:-0} + 1))
-DAY=$(printf "day-%03d" $NEXT_DAY)
+```
+┌─────────────────────────────────────────────────┐
+│                 每日迭代循环                       │
+│                                                  │
+│  ┌──────────┐   ┌──────────┐   ┌──────────┐    │
+│  │ Morning  │──▶│ Execute  │──▶│ Evening  │    │
+│  │ Planning │   │ & Test   │   │ Review   │    │
+│  └──────────┘   └──────────┘   └──────────┘    │
+│       │                              │           │
+│       └──────── 下一天 ◀─────────────┘           │
+└─────────────────────────────────────────────────┘
 ```
 
-### 2. 计划
+### 2. Morning Planning（晨会计划）
 
-从 `docs/daily-logs/TEMPLATE.md` 复制模板，填写:
-- 昨日回顾 (看上一个 day-NNN.md)
-- 今日 2-3 个目标 + 验收标准
-- 风险识别
+每日开始时执行：
 
-### 3. 执行
+```markdown
+## Day N 计划
 
-每个任务的循环:
-```
-编写代码 → idf.py build → idf.py flash → idf.py monitor → 浏览器验证
-    ↑                                                          │
-    └──────────── 修复问题 ◀────────────────────────────────────┘
-```
+### 昨日回顾
+- 完成: [列出完成的任务]
+- 未完成: [列出未完成任务及原因]
+- 阻塞: [列出阻塞项]
 
-**规则:**
-- 测试失败 → 必须修复后再继续下一任务
-- 每个任务完成 → 立即 git commit
-- 编译警告 → 当天必须消除
+### 今日目标
+1. [目标1] - 预计耗时
+2. [目标2] - 预计耗时
+3. [目标3] - 预计耗时
 
-### 4. 结束 (Evening)
+### 风险与依赖
+- [风险项]
 
-- 更新 `docs/daily-logs/day-NNN.md` 完成状态
-- 更新 `docs/TARGET.md` 里程碑 checkbox
-- git commit + push
-
-### 5. 代码重构（自适应触发）
-
-重构**不是固定周期**，而是在每日结束时根据**代码健康度指标**决定是否触发。
-
-#### 触发条件（满足任一即触发次日重构日）
-
-| 指标 | 阈值 | 检查方式 |
-|------|------|---------|
-| 编译警告数 | ≥ 3 | `idf.py build 2>&1 \| grep -c "warning:"` |
-| 单文件行数 | ≥ 250 行 | `wc -l main/*.c components/**/*.c` |
-| 单函数行数 | ≥ 40 行 | 人工/Agent 审查 |
-| 重复代码块 | ≥ 2 处相似片段 | `grep -rn` 或 Agent 识别 |
-| 连续功能开发天数 | ≥ 4 天无重构 | 检查 daily-logs |
-| TODO/FIXME 累积数 | ≥ 5 | `grep -rn "TODO\|FIXME" main/ components/` |
-| 内存泄漏趋势 | free heap 持续下降 | 对比最近 3 天 heap 数据 |
-
-#### 重构日规则
-
-- 🔧 **不增加新功能**，仅做代码改善
-- 优先级: 编译警告 > 大文件拆分 > 重复代码提取 > 命名规范 > 注释完善
-- 重构完成后必须: `idf.py build` 零警告 + 功能回归验证
-- 在 daily-log 中记录重构内容和前后对比指标
-
-#### 每日晚间健康度检查模板
-
-```bash
-# 在每天 Evening Review 时执行
-echo "=== Code Health Check ==="
-echo "Warnings: $(idf.py build 2>&1 | grep -c 'warning:' || echo 0)"
-echo "Large files (>250 lines):"
-find main/ components/ -name '*.c' -exec awk 'END{if(NR>250)print NR, FILENAME}' {} \;
-echo "TODOs: $(grep -rn 'TODO\|FIXME' main/ components/ 2>/dev/null | wc -l)"
-echo "Free heap: check serial monitor"
+### 验收检查点
+- [ ] [检查项1]
+- [ ] [检查项2]
 ```
 
-如果任一指标超过阈值，在 daily-log 的"明日计划"中标记: `⚠️ 触发重构日`
+### 3. Execute & Test（执行与测试）
 
+每个任务遵循以下流程：
+
+```
+编写代码 → 编译检查 → 烧录测试 → 串口验证 → Web UI 验证
+    ↑                                            │
+    └────── 修复问题 ◀──────────────────────────┘
+```
+
+关键规则：
+- 每个任务完成后立即运行测试
+- 测试失败必须在继续下一任务前修复
+- 每完成一个里程碑进行 git commit
+
+### 4. Evening Review（晚间回顾）
+
+每日结束时：
+
+```markdown
+## Day N 回顾
+
+### 完成状态
+| 任务 | 状态 | 备注 |
+|------|------|------|
+| 任务1 | ✅ 完成 | |
+| 任务2 | ⚠️ 部分完成 | 原因: ... |
+| 任务3 | ❌ 未开始 | 阻塞: ... |
+
+### 代码质量
+- 新增代码行数: N
+- 测试通过率: N%
+- 已知问题: [列出]
+
+### 明日计划
+- [优先任务]
+
+### 技术笔记
+- [记录今天学到的关键信息]
+```
+
+### 5. 里程碑检查
+
+每 3-5 天进行一次里程碑评审：
+
+```markdown
+## 里程碑 M: {{MILESTONE_NAME}}
+
+### 目标达成度
+- [x] 子目标1
+- [ ] 子目标2 (进度 70%)
+- [ ] 子目标3 (未开始)
+
+### 整体进度: N%
+
+### 是否需要调整计划: 是/否
+### 调整内容: ...
+```
+
+### 6. 重构窗口
+
+每 5 个迭代日安排一次重构：
+- 审查代码复杂度
+- 消除技术债务
+- 优化性能瓶颈
+- 更新文档
+
+## 工作日志格式
+
+所有日志保存在 `docs/daily-logs/` 目录：
+
+```
+docs/daily-logs/
+├── day-001.md
+├── day-002.md
+├── ...
+└── milestone-1-review.md
+```
 
 ## Self-Test（自检）
 
+> 验证每日迭代工作流的文档生成和跟踪机制。
+
+### 自检步骤
+
 ```bash
-#!/bin/bash
-SKILL="skills/daily-iteration/SKILL.md"
+# Test 1: docs 目录可创建
+mkdir -p /tmp/__selftest_daily__/docs/daily-logs && \
+  echo "SELF_TEST_PASS: docs_dir" || echo "SELF_TEST_FAIL: docs_dir"
 
-[ -f "$SKILL" ] && echo "SELF_TEST_PASS: skill_md_exists" || echo "SELF_TEST_FAIL: skill_md_exists"
-grep -q "Morning" "$SKILL" && echo "SELF_TEST_PASS: has_morning_section" || echo "SELF_TEST_FAIL: has_morning_section"
-grep -q "Evening" "$SKILL" && echo "SELF_TEST_PASS: has_evening_section" || echo "SELF_TEST_FAIL: has_evening_section"
-grep -q "idf.py build" "$SKILL" && echo "SELF_TEST_PASS: has_build_step" || echo "SELF_TEST_FAIL: has_build_step"
-grep -q "git commit" "$SKILL" && echo "SELF_TEST_PASS: has_commit_step" || echo "SELF_TEST_FAIL: has_commit_step"
-grep -q "重构" "$SKILL" && echo "SELF_TEST_PASS: has_refactor_trigger" || echo "SELF_TEST_FAIL: has_refactor_trigger"
+# Test 2: Markdown 模板渲染
+cat > /tmp/__selftest_daily__/docs/daily-logs/day-001.md << 'PLAN'
+## Day 1 计划
+### 昨日回顾
+- 完成: 项目初始化
+### 今日目标
+1. [x] 搭建项目框架
+2. [ ] 实现 WiFi 连接
+### 验收检查点
+- [x] 编译通过
+PLAN
+grep -c '\[x\]' /tmp/__selftest_daily__/docs/daily-logs/day-001.md | \
+  xargs -I{} bash -c '[ {} -ge 1 ] && echo "SELF_TEST_PASS: plan_format" || echo "SELF_TEST_FAIL: plan_format"'
 
-# 检查模板目录
-[ -d "docs/daily-logs" ] && echo "SELF_TEST_PASS: daily_logs_dir" || echo "SELF_TEST_FAIL: daily_logs_dir"
+# Test 3: Git 可用于提交跟踪
+command -v git &>/dev/null && echo "SELF_TEST_PASS: git_available" || echo "SELF_TEST_FAIL: git_available"
+
+rm -rf /tmp/__selftest_daily__
 ```
 
 ### Blind Test（盲测）
 
-**场景描述:**
-AI Agent 首次接手项目，需要开始 Day 1 的开发工作。
-
 **测试 Prompt:**
-> 这是我 ESP32-CAM 项目的第一天开发。请按照 daily-iteration skill 的流程，生成 Day 1 的工作计划。项目目标是搭建 WiFi + HTTP 摄像头流媒体服务器。
+```
+你是一个 AI 开发助手。请阅读此 Skill，然后为一个名为 "test-project" 的项目
+生成 Day 1 的完整工作计划文档，包含：
+- 晨会计划（3 个具体目标）
+- 执行记录模板
+- 晚间回顾模板
+项目目标是"搭建 ESP32 WiFi HTTP 服务器"。
+输出完整的 Markdown 文档。
+```
 
 **验收标准:**
-- [ ] 生成了包含 Morning/Evening 的完整日志文档
-- [ ] 目标具体可执行（不是模糊的"学习 XX"）
-- [ ] 包含编译→烧录→监控→验证的执行循环
-- [ ] 每个任务完成后要求 git commit
-
-**常见失败模式:**
-- Agent 跳过计划直接写代码 → Skill 需强调先写日志
-- Agent 不做上板验证 → 需与 hw-test-verify skill 联动
+- [ ] Agent 生成了包含所有三个部分的文档
+- [ ] 目标是具体的、可执行的（而非模糊的）
+- [ ] 文档使用了 checkbox 格式
+- [ ] Agent 参考了 Skill 中的模板格式
 
 ## 成功标准
 
-- [ ] 按 Morning → 执行 → Evening 流程完成一天
-- [ ] 每个任务有明确的验收标准
-- [ ] daily-log 文件已生成并记录
-- [ ] git commit 至少一次
+- [ ] 每日计划和回顾文档已生成
+- [ ] 任务执行有对应的测试验证
+- [ ] Git 提交与任务完成同步
+- [ ] 里程碑按时评审
+- [ ] 重构窗口按计划执行
