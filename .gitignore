@@ -1,0 +1,28 @@
+# Build artifacts
+build/
+sdkconfig
+sdkconfig.old
+managed_components/
+
+# WiFi credentials — NEVER commit
+*.credentials
+**/wifi_config.h
+
+# IDE
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Keep defaults template
+!sdkconfig.defaults
