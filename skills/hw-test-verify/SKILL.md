@@ -136,13 +136,13 @@ curl -s http://$DEVICE_IP/api/led -X POST -d '{"state":"on"}'
 ```python
 # 需要 ~/patchright-env/ 或系统中安装了 patchright
 from patchright.sync_api import sync_playwright
-import tempfile, time
+import os, time
 
 pw = sync_playwright().start()
 ctx = pw.chromium.launch_persistent_context(
-    user_data_dir=tempfile.mkdtemp(),
+    user_data_dir=os.path.expanduser("~/.patchright-userdata/espcam-verify"),
     channel='chrome',
-    headless=False,  # 有头模式，可视化验证
+    headless=False,  # ⛔ 必须可见模式，禁止 headless
     no_viewport=True,
 )
 page = ctx.pages[0] if ctx.pages else ctx.new_page()
