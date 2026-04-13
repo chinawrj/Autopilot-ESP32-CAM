@@ -82,3 +82,52 @@ echo "Free heap: check serial monitor"
 ```
 
 如果任一指标超过阈值，在 daily-log 的"明日计划"中标记: `⚠️ 触发重构日`
+
+
+## 前置条件
+
+- Git 已初始化
+- `docs/TARGET.md` 存在（里程碑定义）
+- `docs/daily-logs/TEMPLATE.md` 存在
+
+## Self-Test（自检）
+
+```bash
+#!/bin/bash
+SKILL="skills/daily-iteration/SKILL.md"
+
+[ -f "$SKILL" ] && echo "SELF_TEST_PASS: skill_md_exists" || echo "SELF_TEST_FAIL: skill_md_exists"
+grep -q "Morning" "$SKILL" && echo "SELF_TEST_PASS: has_morning_section" || echo "SELF_TEST_FAIL: has_morning_section"
+grep -q "Evening" "$SKILL" && echo "SELF_TEST_PASS: has_evening_section" || echo "SELF_TEST_FAIL: has_evening_section"
+grep -q "idf.py build" "$SKILL" && echo "SELF_TEST_PASS: has_build_step" || echo "SELF_TEST_FAIL: has_build_step"
+grep -q "git commit" "$SKILL" && echo "SELF_TEST_PASS: has_commit_step" || echo "SELF_TEST_FAIL: has_commit_step"
+grep -q "重构" "$SKILL" && echo "SELF_TEST_PASS: has_refactor_trigger" || echo "SELF_TEST_FAIL: has_refactor_trigger"
+
+# 检查模板目录
+[ -d "docs/daily-logs" ] && echo "SELF_TEST_PASS: daily_logs_dir" || echo "SELF_TEST_FAIL: daily_logs_dir"
+```
+
+### Blind Test（盲测）
+
+**场景描述:**
+AI Agent 首次接手项目，需要开始 Day 1 的开发工作。
+
+**测试 Prompt:**
+> 这是我 ESP32-CAM 项目的第一天开发。请按照 daily-iteration skill 的流程，生成 Day 1 的工作计划。项目目标是搭建 WiFi + HTTP 摄像头流媒体服务器。
+
+**验收标准:**
+- [ ] 生成了包含 Morning/Evening 的完整日志文档
+- [ ] 目标具体可执行（不是模糊的"学习 XX"）
+- [ ] 包含编译→烧录→监控→验证的执行循环
+- [ ] 每个任务完成后要求 git commit
+
+**常见失败模式:**
+- Agent 跳过计划直接写代码 → Skill 需强调先写日志
+- Agent 不做上板验证 → 需与 hw-test-verify skill 联动
+
+## 成功标准
+
+- [ ] 按 Morning → 执行 → Evening 流程完成一天
+- [ ] 每个任务有明确的验收标准
+- [ ] daily-log 文件已生成并记录
+- [ ] git commit 至少一次

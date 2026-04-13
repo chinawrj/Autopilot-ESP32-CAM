@@ -139,3 +139,46 @@ tmux capture-pane -t espcam:build -p | grep -q __READY__ && echo "Shell OK" || e
 tmux kill-window -t espcam:build
 tmux new-window -t espcam -n 'build'
 ```
+
+
+## Self-Test（自检）
+
+```bash
+#!/bin/bash
+SKILL="skills/tmux-session/SKILL.md"
+
+[ -f "$SKILL" ] && echo "SELF_TEST_PASS: skill_md_exists" || echo "SELF_TEST_FAIL: skill_md_exists"
+command -v tmux &>/dev/null && echo "SELF_TEST_PASS: tmux_installed" || echo "SELF_TEST_FAIL: tmux_installed"
+grep -q "has-session" "$SKILL" && echo "SELF_TEST_PASS: idempotent_create" || echo "SELF_TEST_FAIL: idempotent_create"
+grep -q "sentinel\|__DONE_" "$SKILL" && echo "SELF_TEST_PASS: sentinel_pattern" || echo "SELF_TEST_FAIL: sentinel_pattern"
+grep -q "capture-pane" "$SKILL" && echo "SELF_TEST_PASS: capture_pane" || echo "SELF_TEST_FAIL: capture_pane"
+grep -q "tmux_exec" "$SKILL" && echo "SELF_TEST_PASS: tmux_exec_function" || echo "SELF_TEST_FAIL: tmux_exec_function"
+grep -q "C-c\|C-]" "$SKILL" && echo "SELF_TEST_PASS: kill_recovery" || echo "SELF_TEST_FAIL: kill_recovery"
+```
+
+### Blind Test（盲测）
+
+**场景描述:**
+AI Agent 需要在 tmux 中编译并烧录 ESP32 项目，等待完成并检查结果。
+
+**测试 Prompt:**
+> 请创建 tmux 会话，在其中执行 `echo hello && sleep 2 && echo done`，等命令完成后获取退出码和完整输出。
+
+**验收标准:**
+- [ ] Agent 使用 has-session 幂等创建会话
+- [ ] Agent 使用 sentinel + 轮询等待命令完成（非 sleep 猜时间）
+- [ ] Agent 正确获取退出码
+- [ ] Agent 使用 capture-pane -S -1000 捕获完整输出
+- [ ] Agent 完成后清理测试会话
+
+**常见失败模式:**
+- 用 `sleep 5` 替代 sentinel 等待 → 不可靠
+- 直接 `new-session` 不检查 `has-session` → 重复创建报错
+- `capture-pane` 不加 `-S` → 输出不完整
+
+## 成功标准
+
+- [ ] tmux 会话幂等创建
+- [ ] 命令通过 sentinel 模式等待完成
+- [ ] 退出码正确获取
+- [ ] 完整输出可读取

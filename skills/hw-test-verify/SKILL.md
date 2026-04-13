@@ -202,3 +202,42 @@ panic/crash → 从 tmux capture-pane 读 backtrace → idf.py monitor 会自动
 - [ ] 预期功能在串口日志中可观察到
 - [ ] 如涉及 Web 功能：curl + Chrome 浏览器验证通过
 - [ ] git commit 记录本次变更
+
+
+## Self-Test（自检）
+
+```bash
+#!/bin/bash
+SKILL="skills/hw-test-verify/SKILL.md"
+
+[ -f "$SKILL" ] && echo "SELF_TEST_PASS: skill_md_exists" || echo "SELF_TEST_FAIL: skill_md_exists"
+grep -q "idf.py build" "$SKILL" && echo "SELF_TEST_PASS: has_build_step" || echo "SELF_TEST_FAIL: has_build_step"
+grep -q "idf.py flash" "$SKILL" && echo "SELF_TEST_PASS: has_flash_step" || echo "SELF_TEST_FAIL: has_flash_step"
+grep -q "idf.py monitor" "$SKILL" && echo "SELF_TEST_PASS: has_monitor_step" || echo "SELF_TEST_FAIL: has_monitor_step"
+grep -q "curl" "$SKILL" && echo "SELF_TEST_PASS: has_curl_verify" || echo "SELF_TEST_FAIL: has_curl_verify"
+grep -q "patchright" "$SKILL" && echo "SELF_TEST_PASS: has_browser_verify" || echo "SELF_TEST_FAIL: has_browser_verify"
+grep -q "headless=False" "$SKILL" && echo "SELF_TEST_PASS: headless_false" || echo "SELF_TEST_FAIL: headless_false"
+grep -q "tmux" "$SKILL" && echo "SELF_TEST_PASS: uses_tmux" || echo "SELF_TEST_FAIL: uses_tmux"
+grep -q "CH340\|wchusbserial" "$SKILL" && echo "SELF_TEST_PASS: ch340_serial" || echo "SELF_TEST_FAIL: ch340_serial"
+```
+
+### Blind Test（盲测）
+
+**场景描述:**
+AI Agent 刚编译成功一个 ESP32-CAM Web 服务器，需要完成上板验证。
+
+**测试 Prompt:**
+> 代码已编译成功。请按照 hw-test-verify skill 完成完整的上板测试，包括烧录、串口检查和浏览器验证。
+
+**验收标准:**
+- [ ] Agent 在 tmux 中执行 idf.py flash
+- [ ] Agent 用 idf.py monitor（非 screen/minicom）读取串口
+- [ ] Agent 检查 WiFi 连接、HTTP 启动、无 crash
+- [ ] Agent 用 curl 验证 HTTP 200
+- [ ] Agent 用 patchright headless=False 打开 Chrome 验证页面
+- [ ] 验证失败时 Agent 进入修复循环而非跳过
+
+**常见失败模式:**
+- Agent 只编译不烧录就继续下一个任务
+- Agent 用 headless=True 或直接 screen 读串口
+- Agent 忽略串口中的 warning/error 继续推进

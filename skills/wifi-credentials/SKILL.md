@@ -202,3 +202,12 @@ AI Agent 需要为 ESP32-CAM 项目配置 WiFi 连接，已知目标路由器信
 **常见失败模式:**
 - Agent 直接将密码写入 .c 文件或 sdkconfig.defaults → 严重安全问题
 - Agent 忽略文件权限设置 → 密码可能被其他用户读取
+
+
+## 成功标准
+
+- [ ] 凭据文件 `~/.esp-wifi-credentials` 存在且权限 600
+- [ ] `sdkconfig` 在 `.gitignore` 中
+- [ ] 源代码中无硬编码 SSID/密码
+- [ ] provision 脚本可正确注入凭据
+- [ ] git 历史中无密码泄漏
