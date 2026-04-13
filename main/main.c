@@ -9,6 +9,7 @@
 #include "virtual_sensor.h"
 #include "ws_stream.h"
 #include "ota_update.h"
+#include "stream_server.h"
 
 static const char *TAG = "main";
 
@@ -49,11 +50,17 @@ void app_main(void)
         return;
     }
 
-    /* Start HTTP server */
+    /* Start HTTP server (port 80 — API + pages) */
     ret = http_server_start();
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "HTTP server start failed");
         return;
+    }
+
+    /* Start stream server (port 81 — MJPEG) */
+    ret = stream_server_start();
+    if (ret != ESP_OK) {
+        ESP_LOGW(TAG, "Stream server start failed (non-fatal)");
     }
 
     ESP_LOGI(TAG, "System ready — http://%s/", wifi_manager_get_ip());

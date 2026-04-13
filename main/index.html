@@ -45,7 +45,7 @@ select{padding:7px;font-size:12px;border:2px solid #555;border-radius:4px;backgr
     <div class="tab" onclick="switchMode('ws')">WS Stream</div>
 </div>
 <div class="stream-box">
-    <img id="tcp-view" src="/stream/tcp" alt="MJPEG">
+    <img id="tcp-view" src="" alt="MJPEG">
     <canvas id="ws-canvas" width="640" height="480" style="display:none"></canvas>
     <div class="hud">
         <span id="hud-fps">FPS: --</span>
@@ -93,6 +93,8 @@ select{padding:7px;font-size:12px;border:2px solid #555;border-radius:4px;backgr
 var mode='tcp', ws=null, ledState=false;
 var wsFc=0, wsLastT=Date.now(), wsFps=0;
 var canvas=document.getElementById('ws-canvas'), ctx=canvas.getContext('2d');
+var streamUrl='http://'+location.hostname+':81/stream/tcp';
+document.getElementById('tcp-view').src=streamUrl;
 
 function switchMode(m) {
     mode = m;

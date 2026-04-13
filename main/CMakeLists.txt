@@ -6,6 +6,7 @@ idf_component_register(
          "led_controller.c"
          "ws_stream.c"
          "ota_update.c"
+         "stream_server.c"
     INCLUDE_DIRS "."
     PRIV_REQUIRES esp_https_ota app_update
                   esp_netif esp_wifi esp_http_server esp_timer

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Browser verification for ESP32-CAM WebSocket stream page with controls."""
+"""Browser verification for ESP32-CAM unified dashboard (Day 17)."""
 import os, signal, time
 from patchright.sync_api import sync_playwright
 
@@ -16,68 +16,45 @@ context = pw.chromium.launch_persistent_context(
 )
 page = context.pages[0] if context.pages else context.new_page()
 
-# Navigate to WS stream page
-page.goto(f"http://{DEVICE_IP}/stream/ws", wait_until="domcontentloaded")
-time.sleep(3)
+print("=== Day 17 Browser Verification ===")
 
-# Take screenshot
-page.screenshot(path="/tmp/esp32cam_ws_stream.png")
-print("Screenshot saved: /tmp/esp32cam_ws_stream.png")
-
-# Check page elements
-title = page.title()
-print(f"Page title: {title}")
-
-# Check canvas is rendering
-canvas = page.query_selector("#canvas")
-w = canvas.get_attribute("width") if canvas else "N/A"
-h = canvas.get_attribute("height") if canvas else "N/A"
-print(f"Canvas size: {w}x{h}")
-
-# Check HUD elements
-fps_text = page.text_content("#hud-fps")
-temp_text = page.text_content("#hud-temp")
-heap_text = page.text_content("#hud-heap")
-ws_text = page.text_content("#hud-ws")
-print(f"HUD FPS: {fps_text}")
-print(f"HUD Temp: {temp_text}")
-print(f"HUD Heap: {heap_text}")
-print(f"HUD WS: {ws_text}")
-
-# Check controls exist
-quality_sel = page.query_selector("#sel-quality")
-res_sel = page.query_selector("#sel-res")
-led_btn = page.query_selector("#led-btn")
-print(f"Quality selector: {'present' if quality_sel else 'MISSING'}")
-print(f"Resolution selector: {'present' if res_sel else 'MISSING'}")
-print(f"LED button: {'present' if led_btn else 'MISSING'}")
-
-# Test quality change via dropdown
-page.select_option("#sel-quality", "20")
-time.sleep(2)
-page.select_option("#sel-quality", "12")
-print("Quality dropdown test: OK")
-
-# Wait for heartbeat (check heap HUD updates)
+# 1. Load unified dashboard
+print("\n[1] Loading unified dashboard...")
+page.goto(f"http://{DEVICE_IP}/", wait_until="domcontentloaded", timeout=15000)
 time.sleep(6)
-heap_text2 = page.text_content("#hud-heap")
-print(f"HUD Heap after heartbeat: {heap_text2}")
 
-# Take final screenshot
-page.screenshot(path="/tmp/esp32cam_ws_controls.png")
-print("Final screenshot: /tmp/esp32cam_ws_controls.png")
+tabs = page.query_selector_all(".tab")
+print(f"  Tabs: {[t.inner_text() for t in tabs]}")
 
-print("\n✅ Browser verification complete!")
+# Check elements exist
+for sel, name in [("#tcp-view", "TCP img"), ("#ws-canvas", "WS canvas"),
+                  ("#led-btn", "LED btn"), ("button.snap", "Snapshot btn"),
+                  ("#si-uptime", "Uptime"), ("#si-heap", "Heap"),
+                  ("#si-rssi", "RSSI"), ("#fw-ver", "FW ver")]:
+    el = page.query_selector(sel)
+    txt = el.inner_text() if el else "MISSING"
+    print(f"  {name}: {txt[:40]}")
 
-# Keep browser open
-print("Browser staying open...")
-signal.signal(signal.SIGINT, lambda *_: None)
-signal.signal(signal.SIGTERM, lambda *_: None)
-try:
-    while True:
-        time.sleep(3600)
-except (KeyboardInterrupt, SystemExit):
-    pass
-finally:
-    context.close()
-    pw.stop()
+page.screenshot(path="/tmp/day17_tcp.png")
+print("  Screenshot: /tmp/day17_tcp.png")
+
+# 2. Switch to WS mode
+print("\n[2] WebSocket mode...")
+if len(tabs) > 1:
+    tabs[1].click()
+    time.sleep(5)
+    ws_stat = page.inner_text("#hud-ws")
+    print(f"  WS: {ws_stat}")
+    page.screenshot(path="/tmp/day17_ws.png")
+    print("  Screenshot: /tmp/day17_ws.png")
+
+# 3. Switch back to TCP
+print("\n[3] Back to TCP, checking snapshot + LED...")
+tabs[0].click()
+time.sleep(2)
+snap = page.query_selector("button.snap")
+led = page.query_selector("#led-btn")
+print(f"  Snapshot: {snap.inner_text() if snap else 'MISSING'}")
+print(f"  LED: {led.inner_text() if led else 'MISSING'}")
+
+print("\n=== Done — browser stays open ===")
