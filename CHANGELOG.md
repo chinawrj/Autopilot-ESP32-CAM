@@ -2,9 +2,64 @@
 
 All notable changes to Autopilot ESP32-CAM are documented in this file.
 
-## [v1.0.0] — 2026-04-15 (Planned Release)
+## [v1.1.0] — 2026-04-13
 
-### 🎉 Initial Release
+### ✨ New Features
+
+- **OTA Firmware Update** — Over-the-air upgrade via `POST /api/ota` with HTTP URL
+  - Dual OTA partition layout (ota_0 + ota_1, 3MB each)
+  - Progress tracking via `GET /api/ota/status`
+  - Automatic rollback protection
+  - Web UI: OTA panel with URL input + progress bar + version display
+- **Snapshot API** — `GET /api/snapshot` returns a single JPEG frame for capture/download
+- **Unified Dashboard** — Single-page UI with tab switching (TCP / WebSocket streams)
+  - All controls on one page: stream, snapshot, LED, OTA, system info
+- **System Info Panel** — Firmware version, uptime, free heap, min heap, WiFi RSSI
+- **WiFi RSSI Monitoring** — `GET /api/status` now includes `rssi`, `uptime`, `wifi_connected`
+
+### 🏗️ Architecture Changes
+
+- **Dual HTTP Server** — Port 80 (API + pages + WebSocket) / Port 81 (MJPEG stream)
+  - Fixes MJPEG stream blocking API responses on single-server architecture
+  - `stream_server.c` extracted as independent MJPEG server module
+
+### 🐛 Bug Fixes
+
+- **Camera I2C recovery after OTA reboot** — `esp_camera_deinit()` before `esp_restart()` to properly release I2C bus; prevents OV2640 probe timeout after software reset
+- **Camera PWDN power-cycle timing** — Extended to 500ms + I2C bus recovery (clock pulse bit-banging) for reliable camera init after any restart path
+
+### 📊 Performance
+
+| Metric | Value |
+|--------|-------|
+| MJPEG FPS | ~10 fps (VGA) |
+| WebSocket FPS | ~10 fps (VGA) |
+| Multi-client | 3 WS + 1 MJPEG, 0 errors (300s) |
+| Free Heap | ~4.2 MB |
+| WiFi Reconnect | ~2s recovery |
+| OTA Download | ~15s for 1MB firmware |
+
+### 🧪 Testing
+
+- ✅ Full endpoint regression (10 API endpoints + dual video streams)
+- ✅ Browser automation test (Patchright, 17/18 checks pass)
+- ✅ OTA end-to-end test (download → flash → reboot → camera OK → HTTP OK)
+- ✅ Multi-client stress test (3 WS + 1 MJPEG, 300s, 0 errors)
+- ✅ WiFi disconnect/reconnect (3/3 rounds, ~2s recovery)
+- ✅ Heap stability (no leak trend, ±50KB drift over 300s)
+- ✅ All code < 250 lines/file, 0 compiler warnings
+
+### 🔧 New Tools
+
+- `tools/regression_test.py` — Automated browser regression test suite
+- `tools/stability_test.sh` — Multi-client stability test script
+- `tools/ota_e2e_test.py` — OTA end-to-end test with HTTP server
+
+---
+
+## [v1.0.0] — 2026-04-09
+
+### 🎉 Initial Release — Complete Camera Web Server
 
 Complete camera web server for YD-ESP32-CAM (ESP32-WROVER-E-N8R8).
 
