@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Autopilot ESP32-CAM</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    background: #1a1a2e;
+    color: #eee;
+    font-family: 'Courier New', monospace;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+}
+h1 {
+    margin: 12px 0 8px;
+    font-size: 1.2em;
+    color: #0ff;
+    letter-spacing: 2px;
+}
+.stream-container {
+    position: relative;
+    display: inline-block;
+    border: 2px solid #0ff;
+    border-radius: 4px;
+    overflow: hidden;
+}
+#stream {
+    display: block;
+    max-width: 90vw;
+    max-height: 70vh;
+    background: #000;
+}
+.hud {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 12px;
+    background: rgba(0,0,0,0.6);
+    font-size: 14px;
+    color: #0f0;
+    pointer-events: none;
+}
+.hud span { margin: 0 8px; }
+.controls {
+    margin: 12px 0;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+.led-btn {
+    padding: 8px 20px;
+    font-size: 14px;
+    border: 2px solid #555;
+    border-radius: 4px;
+    background: #333;
+    color: #eee;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.led-btn.on { border-color: #0f0; color: #0f0; }
+.led-btn.off { border-color: #f00; color: #f00; }
+.status-bar {
+    font-size: 12px;
+    color: #888;
+    margin-top: 8px;
+}
+</style>
+</head>
+<body>
+<h1>AUTOPILOT ESP32-CAM</h1>
+<div class="stream-container">
+    <img id="stream" src="/stream/tcp" alt="Live Stream">
+    <div class="hud">
+        <span id="hud-fps">FPS: --</span>
+        <span id="hud-temp">TEMP: --.-&deg;C</span>
+    </div>
+</div>
+<div class="controls">
+    <button id="led-btn" class="led-btn off" onclick="toggleLed()">&#x1F534; LED OFF</button>
+</div>
+<div class="status-bar" id="status">Connecting...</div>
+
+<script>
+var ledState = false;
+
+function updateStatus() {
+    fetch('/api/status')
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            document.getElementById('hud-fps').textContent = 'FPS: ' + d.fps.toFixed(1);
+            document.getElementById('hud-temp').innerHTML = 'TEMP: ' + d.temperature.toFixed(1) + '&deg;C';
+            ledState = d.led_state;
+            var btn = document.getElementById('led-btn');
+            if (ledState) {
+                btn.className = 'led-btn on';
+                btn.innerHTML = '&#x1F7E2; LED ON';
+            } else {
+                btn.className = 'led-btn off';
+                btn.innerHTML = '&#x1F534; LED OFF';
+            }
+            document.getElementById('status').textContent =
+                'Connected | ' + new Date().toLocaleTimeString();
+        })
+        .catch(function() {
+            document.getElementById('status').textContent = 'Connection lost...';
+        });
+}
+
+function toggleLed() {
+    fetch('/api/led', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({state: 'toggle'})
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        ledState = d.led_state;
+        updateStatus();
+    })
+    .catch(function() {});
+}
+
+setInterval(updateStatus, 1000);
+updateStatus();
+</script>
+</body>
+</html>
