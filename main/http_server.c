@@ -1,8 +1,6 @@
 #include "http_server.h"
 
 #include <string.h>
-#include <stdio.h>
-#include <sys/time.h>
 #include <unistd.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -46,8 +44,6 @@ float http_server_get_fps(void)
 {
     return s_fps;
 }
-
-/* --- Index page handler --- */
 
 extern const char index_html_start[] asm("_binary_index_html_start");
 extern const char index_html_end[]   asm("_binary_index_html_end");
@@ -198,62 +194,22 @@ esp_err_t http_server_start(void)
         return err;
     }
 
-    /* GET / */
-    httpd_uri_t index_uri = {
-        .uri      = "/",
-        .method   = HTTP_GET,
-        .handler  = index_handler,
-    };
-    httpd_register_uri_handler(server, &index_uri);
-
-    /* GET /stream/tcp */
-    httpd_uri_t stream_uri = {
-        .uri      = "/stream/tcp",
-        .method   = HTTP_GET,
-        .handler  = stream_tcp_handler,
-    };
-    httpd_register_uri_handler(server, &stream_uri);
-
-    /* GET /api/status */
-    httpd_uri_t status_uri = {
-        .uri      = "/api/status",
-        .method   = HTTP_GET,
-        .handler  = status_handler,
-    };
-    httpd_register_uri_handler(server, &status_uri);
-
-    /* POST /api/led */
-    httpd_uri_t led_uri = {
-        .uri      = "/api/led",
-        .method   = HTTP_POST,
-        .handler  = led_handler,
-    };
-    httpd_register_uri_handler(server, &led_uri);
-
-    /* GET /stream/udp (page) */
-    httpd_uri_t stream_udp_page_uri = {
-        .uri      = "/stream/udp",
-        .method   = HTTP_GET,
-        .handler  = stream_udp_page_handler,
-    };
-    httpd_register_uri_handler(server, &stream_udp_page_uri);
-
-    /* WS /ws/stream (WebSocket video stream) */
-    httpd_uri_t ws_stream_uri = {
-        .uri          = "/ws/stream",
-        .method       = HTTP_GET,
-        .handler      = ws_stream_handler,
-        .is_websocket = true,
-    };
-    httpd_register_uri_handler(server, &ws_stream_uri);
-
-    /* POST /api/debug/wifi-disconnect (testing only) */
-    httpd_uri_t wifi_dc_uri = {
-        .uri      = "/api/debug/wifi-disconnect",
-        .method   = HTTP_POST,
-        .handler  = debug_wifi_disconnect_handler,
-    };
-    httpd_register_uri_handler(server, &wifi_dc_uri);
+    httpd_register_uri_handler(server, &(httpd_uri_t){
+        .uri = "/", .method = HTTP_GET, .handler = index_handler});
+    httpd_register_uri_handler(server, &(httpd_uri_t){
+        .uri = "/stream/tcp", .method = HTTP_GET, .handler = stream_tcp_handler});
+    httpd_register_uri_handler(server, &(httpd_uri_t){
+        .uri = "/api/status", .method = HTTP_GET, .handler = status_handler});
+    httpd_register_uri_handler(server, &(httpd_uri_t){
+        .uri = "/api/led", .method = HTTP_POST, .handler = led_handler});
+    httpd_register_uri_handler(server, &(httpd_uri_t){
+        .uri = "/stream/udp", .method = HTTP_GET, .handler = stream_udp_page_handler});
+    httpd_register_uri_handler(server, &(httpd_uri_t){
+        .uri = "/ws/stream", .method = HTTP_GET, .handler = ws_stream_handler,
+        .is_websocket = true});
+    httpd_register_uri_handler(server, &(httpd_uri_t){
+        .uri = "/api/debug/wifi-disconnect", .method = HTTP_POST,
+        .handler = debug_wifi_disconnect_handler});
 
     ESP_LOGI(TAG, "HTTP server started on port %d", config.server_port);
     return ESP_OK;
