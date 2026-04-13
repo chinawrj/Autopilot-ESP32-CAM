@@ -3,6 +3,7 @@
 [![ESP-IDF](https://img.shields.io/badge/ESP--IDF-v5.x-blue?logo=espressif)](https://docs.espressif.com/projects/esp-idf/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-ESP32--WROVER--E-orange?logo=espressif)](https://www.espressif.com/en/products/socs/esp32)
+[![Built by](https://img.shields.io/badge/Built%20by-Claude%20Opus%204.6-blueviolet?logo=anthropic)](https://www.anthropic.com/claude)
 
 **[中文文档 →](README_CN.md)**
 
@@ -284,7 +285,20 @@ curl -X POST http://192.168.1.171/api/led -d '{"state":"off"}'
 
 ## Development Story
 
-This project was developed entirely by an AI Agent working as a senior embedded engineer, completing the full development cycle from scratch through daily iterations:
+### About the Developer
+
+This project was **autonomously developed by an AI Agent** — specifically **Claude Opus 4.6** (Anthropic), operating as a senior embedded engineer inside VS Code with GitHub Copilot. No human wrote any firmware code; the AI Agent completed the entire development lifecycle independently:
+
+- **Planning**: Read hardware datasheets, defined milestones, and created daily task lists
+- **Coding**: Wrote all C firmware (ESP-IDF), HTML/JS frontends, and Python test tools
+- **Testing**: Compiled, flashed to real hardware, read serial logs, and verified via browser — every single change
+- **Debugging**: Diagnosed crash backtraces, fixed memory issues, resolved WiFi reconnection edge cases
+- **Documentation**: Wrote bilingual README, CHANGELOG, architecture diagrams, and daily logs
+- **Release**: Created GitHub Release, took screenshots via browser automation (Patchright)
+
+The human's role was limited to: connecting the hardware, providing WiFi credentials, and relaying customer feedback.
+
+### Milestone Timeline
 
 | Milestone | Day | Deliverable |
 |-----------|-----|-------------|
@@ -294,7 +308,7 @@ This project was developed entirely by an AI Agent working as a senior embedded 
 | M3: LED Control | Day 4 | GPIO33 web control |
 | M4: WebSocket Stream | Day 8 | WS video + control messages + heartbeat |
 | M5: Stability | Day 11 | Memory leak tests + stress tests + WiFi reconnect |
-| Release Prep | Day 12 | Bilingual docs + screenshots + architecture |
+| Release v1.0.0 | Day 13 | Bilingual docs + screenshots + GitHub Release |
 
 Every code change was build → flash → serial verify → browser verify on real hardware. See [docs/daily-logs/](docs/daily-logs/) for detailed development logs.
 

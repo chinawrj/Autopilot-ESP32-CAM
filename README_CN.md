@@ -3,6 +3,7 @@
 [![ESP-IDF](https://img.shields.io/badge/ESP--IDF-v5.x-blue?logo=espressif)](https://docs.espressif.com/projects/esp-idf/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-ESP32--WROVER--E-orange?logo=espressif)](https://www.espressif.com/en/products/socs/esp32)
+[![Built by](https://img.shields.io/badge/Built%20by-Claude%20Opus%204.6-blueviolet?logo=anthropic)](https://www.anthropic.com/claude)
 
 **[English Documentation →](README.md)**
 
@@ -284,7 +285,20 @@ curl -X POST http://192.168.1.171/api/led -d '{"state":"off"}'
 
 ## 开发历程
 
-本项目由 AI Agent 扮演资深嵌入式工程师，通过每日迭代方式从零开发至交付完成：
+### 关于开发者
+
+本项目由 **AI Agent 全自主开发** — 具体为 **Claude Opus 4.6**（Anthropic），在 VS Code + GitHub Copilot 环境中扮演资深嵌入式工程师。所有固件代码均由 AI Agent 独立完成，无人类编写任何一行代码：
+
+- **规划**: 阅读硬件资料，定义里程碑，制定每日任务清单
+- **编码**: 编写全部 C 固件（ESP-IDF）、HTML/JS 前端页面、Python 测试工具
+- **测试**: 每次变更都经过 编译 → 烧录 → 串口验证 → 浏览器验证 完整闭环
+- **调试**: 分析崩溃堆栈、修复内存问题、解决 WiFi 重连边界情况
+- **文档**: 编写中英双语 README、CHANGELOG、架构图、每日开发日志
+- **发布**: 创建 GitHub Release，通过浏览器自动化（Patchright）截取 UI 截图
+
+人类的角色仅限于：连接硬件、提供 WiFi 凭据、转达客户反馈。
+
+### 里程碑时间线
 
 | 里程碑 | 完成日 | 交付内容 |
 |--------|--------|----------|
@@ -294,7 +308,7 @@ curl -X POST http://192.168.1.171/api/led -d '{"state":"off"}'
 | M3: LED 控制 | Day 4 | GPIO33 网页控制 |
 | M4: WebSocket 流 | Day 8 | WS 视频 + 控制消息 + 心跳 |
 | M5: 稳定性优化 | Day 11 | 内存泄漏测试 + 压力测试 + WiFi 重连 |
-| Release 准备 | Day 12 | 中英双语文档 + 截图 + 架构图 |
+| Release v1.0.0 | Day 13 | 中英双语文档 + 截图 + GitHub Release |
 
 每次代码变更都经过完整的 编译 → 烧录 → 串口验证 → 浏览器验证 循环。详细日志见 [docs/daily-logs/](docs/daily-logs/)。
 

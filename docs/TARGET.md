@@ -147,8 +147,42 @@
 | M3 LED | ✅ | 100% |
 | M4 WS流 | ✅ | 100% |
 | M5 稳定性 | ✅ | 100% |
-| Release 准备 | ✅ | 100% |
+| Release v1.0.0 | ✅ | 100% |
+| M6 v1.1.0 新功能 | 🚧 | 0% |
 
-**当前工作日**: Day 14
+**当前工作日**: Day 15
 **当前固件版本**: v1.0.0
-**状态**: 客户反馈修复 — /stream/udp 重命名为 /stream/ws + GPIO 引脚文档
+**状态**: v1.1.0 开发中
+
+---
+
+## v1.1.0 Release 计划（Day 15-18）
+
+### M6: v1.1.0 新功能
+> **目标日**: Day 15-18 | **发布日**: Day 18
+
+#### Day 15: 文档更新 + 规划
+- [ ] README 添加 AI 开发者信息（Claude Opus 4.6）
+- [ ] v1.1.0 roadmap 规划
+
+#### Day 16: OTA 固件升级
+- [ ] OTA 升级模块 (ota_update.c/h)
+  - [ ] HTTP OTA: 从 URL 下载固件并升级
+  - [ ] 版本号管理 (app_desc)
+  - [ ] 回滚保护 (rollback)
+- [ ] REST API: `POST /api/ota` 触发升级
+- [ ] 前端: OTA 升级按钮 + 进度显示
+- [ ] 分区表调整: 双 OTA 分区 (ota_0 + ota_1)
+
+#### Day 17: 快照拍照 + Web UI 优化
+- [ ] REST API: `GET /api/snapshot` 返回单帧 JPEG
+- [ ] 前端: 拍照按钮 + 图片下载
+- [ ] 首页合并: 统一入口页面（TCP/WS 切换 + 所有控制面板）
+- [ ] 系统信息页面: 固件版本、运行时间、内存状态、WiFi 信号
+
+#### Day 18: 测试 + 发布 v1.1.0
+- [ ] 全功能回归测试 (所有端点)
+- [ ] OTA 升级端到端测试
+- [ ] 稳定性验证 (多客户端 + WiFi 重连)
+- [ ] CHANGELOG 更新
+- [ ] GitHub Release v1.1.0
