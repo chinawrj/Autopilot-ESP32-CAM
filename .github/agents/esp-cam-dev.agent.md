@@ -1,6 +1,5 @@
 ---
 description: "Autopilot ESP32-CAM 开发 Agent — 像资深嵌入式工程师一样每日迭代开发"
-tools: ["terminal", "codebase", "file"]
 ---
 
 # Autopilot ESP32-CAM 开发 Agent
