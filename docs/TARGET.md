@@ -131,9 +131,9 @@
 - [x] CHANGELOG.md (v1.0.0 release notes)
 - [x] 架构图 (Mermaid, 嵌入 README)
 - [x] 截图工具 (tools/take_screenshots.py)
-- [ ] GitHub Release 创建 (Day 13)
+- [x] GitHub Release 创建 (Day 13)
 
-**完成标志**: ✅ 中英文 README 图文并茂 + CHANGELOG 完成 (Day 12)
+**完成标志**: ✅ GitHub Release v1.0.0 发布 + README 渲染验证通过 (Day 13)
 
 ---
 
@@ -149,6 +149,6 @@
 | M5 稳定性 | ✅ | 100% |
 | Release 准备 | ✅ | 100% |
 
-**当前工作日**: Day 12
-**当前固件版本**: v1.0.0-rc1
-**状态**: 📦 Release 准备完成 — 等待 Day 13 正式发布
+**当前工作日**: Day 13
+**当前固件版本**: v1.0.0
+**状态**: 🎉 v1.0.0 正式发布 — https://github.com/chinawrj/Autopilot-ESP32-CAM/releases/tag/v1.0.0
