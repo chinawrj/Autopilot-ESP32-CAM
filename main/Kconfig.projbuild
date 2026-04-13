@@ -1,0 +1,24 @@
+menu "WiFi Configuration"
+
+    config ESP_WIFI_SSID
+        string "WiFi SSID"
+        default "DEFAULT_SSID"
+        help
+            WiFi network name.
+            Override via menuconfig or tools/provision-wifi.sh.
+
+    config ESP_WIFI_PASSWORD
+        string "WiFi Password"
+        default "DEFAULT_PASS"
+        help
+            WiFi password.
+            Override via menuconfig or tools/provision-wifi.sh.
+
+    config ESP_WIFI_MAXIMUM_RETRY
+        int "Maximum retry"
+        default 5
+        help
+            Maximum number of retries before giving up WiFi connection.
+            After max retries, the device will keep trying with longer intervals.
+
+endmenu

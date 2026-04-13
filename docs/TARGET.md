@@ -7,22 +7,22 @@
 
 ## 里程碑进度
 
-### M0: 项目脚手架 ⬜ Not Started
-> **目标日**: Day 1
+### M0: 项目脚手架 ✅ Complete
+> **目标日**: Day 1 | **完成日**: Day 1
 
-- [ ] ESP-IDF 项目结构搭建 (CMakeLists.txt, 分区表)
-- [ ] sdkconfig.defaults (PSRAM, 摄像头, WiFi 基础配置)
-- [ ] WiFi 管理模块 (wifi_manager.c/h)
-  - [ ] 从 Kconfig 读取 SSID/Password
-  - [ ] STA 模式连接
-  - [ ] 自动重连 (最大重试 5 次)
-  - [ ] 事件回调 (连接/断开/获取 IP)
-- [ ] tools/provision-wifi.sh (凭据注入)
-- [ ] 编译通过
+- [x] ESP-IDF 项目结构搭建 (CMakeLists.txt, 分区表)
+- [x] sdkconfig.defaults (PSRAM, 摄像头, WiFi 基础配置)
+- [x] WiFi 管理模块 (wifi_manager.c/h)
+  - [x] 从 Kconfig 读取 SSID/Password
+  - [x] STA 模式连接
+  - [x] 自动重连 (最大重试 5 次)
+  - [x] 事件回调 (连接/断开/获取 IP)
+- [x] tools/provision-wifi.sh (凭据注入)
+- [x] 编译通过
 - [ ] 烧录成功 + 串口看到 WiFi 连接日志 + 获取 IP
-- [ ] Git: 初始提交
+- [x] Git: 初始提交
 
-**完成标志**: 串口输出 `WiFi connected, IP: x.x.x.x`
+**完成标志**: 串口输出 `WiFi connected, IP: x.x.x.x` (待硬件验证)
 
 ---
 
