@@ -81,6 +81,26 @@ static void handle_control(const char *msg)
     cJSON_Delete(root);
 }
 
+static void send_heartbeat(int *fds, int n)
+{
+    s_last_hb_time = esp_timer_get_time();
+    s_hb_now = false;
+    char hb[160];
+    int hb_len = snprintf(hb, sizeof(hb),
+        "{\"type\":\"heartbeat\",\"fps\":%.1f,\"clients\":%d,"
+        "\"heap_free\":%lu,\"heap_min\":%lu}",
+        s_ws_fps, n,
+        (unsigned long)esp_get_free_heap_size(),
+        (unsigned long)esp_get_minimum_free_heap_size());
+    httpd_ws_frame_t hb_pkt = {
+        .final = true, .type = HTTPD_WS_TYPE_TEXT,
+        .payload = (uint8_t *)hb, .len = hb_len,
+    };
+    for (int i = 0; i < n; i++) {
+        httpd_ws_send_frame_async(s_server, fds[i], &hb_pkt);
+    }
+}
+
 static void ws_stream_task(void *pvParam)
 {
     ESP_LOGI(TAG, "Streaming task started");
@@ -141,22 +161,7 @@ static void ws_stream_task(void *pvParam)
         /* Heartbeat: push status JSON periodically or on demand */
         int64_t now_hb = esp_timer_get_time();
         if (s_hb_now || now_hb - s_last_hb_time >= HEARTBEAT_US) {
-            s_hb_now = false;
-            s_last_hb_time = now_hb;
-            char hb[160];
-            int hb_len = snprintf(hb, sizeof(hb),
-                "{\"type\":\"heartbeat\",\"fps\":%.1f,\"clients\":%d,"
-                "\"heap_free\":%lu,\"heap_min\":%lu}",
-                s_ws_fps, n,
-                (unsigned long)esp_get_free_heap_size(),
-                (unsigned long)esp_get_minimum_free_heap_size());
-            httpd_ws_frame_t hb_pkt = {
-                .final = true, .type = HTTPD_WS_TYPE_TEXT,
-                .payload = (uint8_t *)hb, .len = hb_len,
-            };
-            for (int i = 0; i < n; i++) {
-                httpd_ws_send_frame_async(s_server, fds[i], &hb_pkt);
-            }
+            send_heartbeat(fds, n);
         }
     }
 }
