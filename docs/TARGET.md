@@ -26,59 +26,59 @@
 
 ---
 
-### M1: 基础 TCP 视频流 ⬜ Not Started
-> **目标日**: Day 2-3
+### M1: 基础 TCP 视频流 ✅ Complete
+> **目标日**: Day 2-3 | **完成日**: Day 3
 
-- [ ] OV2640 摄像头初始化 (camera_init.c)
-  - [ ] PSRAM 帧缓冲
-  - [ ] 分辨率: VGA (640x480)
-  - [ ] JPEG 质量: 12
-- [ ] HTTP 服务器 (http_server.c)
-  - [ ] GET `/` → 主页 (index.html)
-  - [ ] GET `/stream/tcp` → MJPEG 流
-  - [ ] MJPEG: multipart/x-mixed-replace boundary
-- [ ] 前端页面 (frontend/index.html)
-  - [ ] `<img>` 标签指向 `/stream/tcp`
-  - [ ] 基本布局和样式
-- [ ] 浏览器验证: 可以看到实时画面
+- [x] OV2640 摄像头初始化 (camera_init.c)
+  - [x] PSRAM 帧缓冲
+  - [x] 分辨率: VGA (640x480)
+  - [x] JPEG 质量: 12
+- [x] HTTP 服务器 (http_server.c)
+  - [x] GET `/` → 主页 (index.html)
+  - [x] GET `/stream/tcp` → MJPEG 流
+  - [x] MJPEG: multipart/x-mixed-replace boundary
+- [x] 前端页面 (main/index.html)
+  - [x] `<img>` 标签指向 `/stream/tcp`
+  - [x] 基本布局和样式
+- [ ] 浏览器验证: 可以看到实时画面 (待硬件测试)
 
-**完成标志**: 浏览器打开 `http://<esp-ip>/stream/tcp` 显示实时画面
-
----
-
-### M2: HUD 叠加显示 ⬜ Not Started
-> **目标日**: Day 4-5
-
-- [ ] FPS 实时计算 (在服务器端统计帧率)
-- [ ] 虚拟温度传感器组件 (components/virtual_sensor/)
-  - [ ] 基准 25°C，±3°C 随机波动
-  - [ ] 更新频率 1 Hz
-- [ ] REST API
-  - [ ] GET `/api/status` → JSON {fps, temperature, led_state}
-- [ ] 前端 HUD
-  - [ ] JavaScript 轮询 `/api/status` (每秒)
-  - [ ] 叠加 FPS 和温度到视频流上方
-  - [ ] 样式: 半透明黑底白字
-
-**完成标志**: 页面上方实时显示 `FPS: XX | Temp: XX.X°C`
+**完成标志**: 浏览器打开 `http://<esp-ip>/stream/tcp` 显示实时画面 (待硬件验证)
 
 ---
 
-### M3: LED 控制 ⬜ Not Started
-> **目标日**: Day 6
+### M2: HUD 叠加显示 ✅ Complete
+> **目标日**: Day 4-5 | **完成日**: Day 5
 
-- [ ] GPIO33 LED 驱动 (led_controller.c)
-  - [ ] 初始化为输出, 默认关闭
-  - [ ] on/off/toggle 接口
-- [ ] REST API
-  - [ ] POST `/api/led` body: {"state": "on"/"off"/"toggle"}
-  - [ ] 返回当前状态 JSON
-- [ ] 前端按钮
-  - [ ] Toggle 按钮，显示当前状态 (🔴 OFF / 🟢 ON)
-  - [ ] 点击发送 POST 请求
-  - [ ] 实时同步状态
+- [x] FPS 实时计算 (在服务器端统计帧率)
+- [x] 虚拟温度传感器组件 (components/virtual_sensor/)
+  - [x] 基准 25°C，±3°C 随机波动
+  - [x] 更新频率 1 Hz
+- [x] REST API
+  - [x] GET `/api/status` → JSON {fps, temperature, led_state}
+- [x] 前端 HUD
+  - [x] JavaScript 轮询 `/api/status` (每秒)
+  - [x] 叠加 FPS 和温度到视频流上方
+  - [x] 样式: 半透明黑底白字
 
-**完成标志**: 点击网页按钮，ESP32-CAM 板载 LED 亮/灭
+**完成标志**: 页面上方实时显示 `FPS: XX | Temp: XX.X°C` (待硬件验证)
+
+---
+
+### M3: LED 控制 ✅ Complete
+> **目标日**: Day 6 | **完成日**: Day 4 (提前完成)
+
+- [x] GPIO33 LED 驱动 (led_controller.c)
+  - [x] 初始化为输出, 默认关闭
+  - [x] on/off/toggle 接口
+- [x] REST API
+  - [x] POST `/api/led` body: {"state": "on"/"off"/"toggle"}
+  - [x] 返回当前状态 JSON
+- [x] 前端按钮
+  - [x] Toggle 按钮，显示当前状态 (🔴 OFF / 🟢 ON)
+  - [x] 点击发送 POST 请求
+  - [x] 实时同步状态
+
+**完成标志**: 点击网页按钮，ESP32-CAM 板载 LED 亮/灭 (待硬件验证)
 
 ---
 
