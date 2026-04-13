@@ -148,9 +148,9 @@
 | M4 WS流 | ✅ | 100% |
 | M5 稳定性 | ✅ | 100% |
 | Release v1.0.0 | ✅ | 100% |
-| M6 v1.1.0 新功能 | 🚧 | 0% |
+| M6 v1.1.0 新功能 | 🚧 | 40% |
 
-**当前工作日**: Day 15
+**当前工作日**: Day 16
 **当前固件版本**: v1.0.0
 **状态**: v1.1.0 开发中
 
@@ -162,17 +162,20 @@
 > **目标日**: Day 15-18 | **发布日**: Day 18
 
 #### Day 15: 文档更新 + 规划
-- [ ] README 添加 AI 开发者信息（Claude Opus 4.6）
-- [ ] v1.1.0 roadmap 规划
+- [x] README 添加 AI 开发者信息（Claude Opus 4.6）
+- [x] v1.1.0 roadmap 规划
 
 #### Day 16: OTA 固件升级
-- [ ] OTA 升级模块 (ota_update.c/h)
-  - [ ] HTTP OTA: 从 URL 下载固件并升级
-  - [ ] 版本号管理 (app_desc)
-  - [ ] 回滚保护 (rollback)
-- [ ] REST API: `POST /api/ota` 触发升级
-- [ ] 前端: OTA 升级按钮 + 进度显示
-- [ ] 分区表调整: 双 OTA 分区 (ota_0 + ota_1)
+- [x] OTA 升级模块 (ota_update.c/h)
+  - [x] HTTP OTA: 从 URL 下载固件并升级
+  - [x] 版本号管理 (app_desc)
+  - [x] 回滚保护 (rollback — 双 OTA 分区)
+- [x] REST API: `POST /api/ota` 触发升级
+- [x] REST API: `GET /api/ota/status` 进度查询
+- [x] 前端: OTA 升级面板 (URL输入 + 进度条 + 版本显示)
+- [x] 分区表调整: 双 OTA 分区 (ota_0 + ota_1, 3MB each)
+- [x] 修复: 摄像头 PWDN 上电时序 (OTA 重启后 I2C 超时)
+- [x] E2E 测试: 下载→烧写→重启→摄像头OK→HTTP OK
 
 #### Day 17: 快照拍照 + Web UI 优化
 - [ ] REST API: `GET /api/snapshot` 返回单帧 JPEG
