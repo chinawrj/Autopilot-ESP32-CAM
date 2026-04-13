@@ -19,10 +19,10 @@
   - [x] 事件回调 (连接/断开/获取 IP)
 - [x] tools/provision-wifi.sh (凭据注入)
 - [x] 编译通过
-- [ ] 烧录成功 + 串口看到 WiFi 连接日志 + 获取 IP
+- [x] 烧录成功 + 串口看到 WiFi 连接日志 + 获取 IP (Day 6 验证: IP 192.168.1.171)
 - [x] Git: 初始提交
 
-**完成标志**: 串口输出 `WiFi connected, IP: x.x.x.x` (待硬件验证)
+**完成标志**: ✅ 串口输出 `WiFi connected, IP: 192.168.1.171` (Day 6 硬件验证通过)
 
 ---
 
@@ -40,9 +40,9 @@
 - [x] 前端页面 (main/index.html)
   - [x] `<img>` 标签指向 `/stream/tcp`
   - [x] 基本布局和样式
-- [ ] 浏览器验证: 可以看到实时画面 (待硬件测试)
+- [x] 浏览器验证: MJPEG 流正常，~14KB/帧，FPS ~6.3 (Day 6 curl 验证)
 
-**完成标志**: 浏览器打开 `http://<esp-ip>/stream/tcp` 显示实时画面 (待硬件验证)
+**完成标志**: ✅ `http://192.168.1.171/stream/tcp` MJPEG 流工作正常 (Day 6 硬件验证通过)
 
 ---
 
@@ -60,7 +60,7 @@
   - [x] 叠加 FPS 和温度到视频流上方
   - [x] 样式: 半透明黑底白字
 
-**完成标志**: 页面上方实时显示 `FPS: XX | Temp: XX.X°C` (待硬件验证)
+**完成标志**: ✅ /api/status → fps=6.3, temp=27.3°C, led_state (Day 6 硬件验证通过)
 
 ---
 
@@ -77,6 +77,7 @@
   - [x] Toggle 按钮，显示当前状态 (🔴 OFF / 🟢 ON)
   - [x] 点击发送 POST 请求
   - [x] 实时同步状态
+- [x] 硬件验证: LED on/off/toggle 全部工作 (Day 6 curl 验证)
 
 **完成标志**: 点击网页按钮，ESP32-CAM 板载 LED 亮/灭 (待硬件验证)
 
