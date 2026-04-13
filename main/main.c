@@ -2,6 +2,8 @@
 #include "freertos/task.h"
 #include "esp_log.h"
 #include "esp_system.h"
+#include "esp_netif.h"
+#include "mdns.h"
 #include "wifi_manager.h"
 #include "camera_init.h"
 #include "http_server.h"
@@ -12,6 +14,26 @@
 #include "stream_server.h"
 
 static const char *TAG = "main";
+
+static void mdns_init_service(void)
+{
+    esp_err_t err = mdns_init();
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "mDNS init failed: %s", esp_err_to_name(err));
+        return;
+    }
+    mdns_hostname_set("espcam");
+    mdns_instance_name_set("Autopilot ESP32-CAM");
+    mdns_service_add(NULL, "_http", "_tcp", 80, NULL, 0);
+
+    /* Manually enable mDNS on STA interface — GOT_IP event already fired */
+    esp_netif_t *sta = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
+    if (sta) {
+        mdns_netif_action(sta, MDNS_EVENT_ENABLE_IP4);
+        mdns_netif_action(sta, MDNS_EVENT_ANNOUNCE_IP4);
+    }
+    ESP_LOGI(TAG, "mDNS started: http://espcam.local/");
+}
 
 void app_main(void)
 {
@@ -25,6 +47,9 @@ void app_main(void)
         return;
     }
     ESP_LOGI(TAG, "WiFi connected. IP: %s", wifi_manager_get_ip());
+
+    /* Initialize mDNS for espcam.local discovery */
+    mdns_init_service();
 
     /* Initialize camera */
     ret = camera_init();

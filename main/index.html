@@ -36,6 +36,10 @@ select{padding:7px;font-size:12px;border:2px solid #555;border-radius:4px;backgr
 .ota-progress div{height:100%;width:0%;background:#0f0;transition:width .3s}
 .ota-status{font-size:11px;color:#888;margin-top:3px}
 .status-bar{font-size:11px;color:#666;margin:6px 0 10px}
+.cam-grid{display:flex;flex-direction:column;gap:6px;margin-top:8px;font-size:12px;color:#aaa}
+.cam-grid label{display:flex;align-items:center;gap:6px}
+.cam-grid input[type=range]{flex:1;accent-color:#0ff}
+.cam-grid span{min-width:20px;color:#0f0;text-align:right}
 </style>
 </head>
 <body>
@@ -75,6 +79,20 @@ select{padding:7px;font-size:12px;border:2px solid #555;border-radius:4px;backgr
         <span>WiFi RSSI</span><span class="val" id="si-rssi">--</span>
         <span>WiFi Status</span><span class="val" id="si-wifi">--</span>
         <span>Temperature</span><span class="val" id="si-temp">--</span>
+    </div>
+</details>
+
+<details class="panel">
+    <summary>&#x1F4F7; Camera Settings</summary>
+    <div class="cam-grid">
+        <label>Brightness<input type="range" id="cam-brightness" min="-2" max="2" value="0" oninput="setCam('brightness',this.value)"><span id="v-brightness">0</span></label>
+        <label>Contrast<input type="range" id="cam-contrast" min="-2" max="2" value="0" oninput="setCam('contrast',this.value)"><span id="v-contrast">0</span></label>
+        <label>Saturation<input type="range" id="cam-saturation" min="-2" max="2" value="0" oninput="setCam('saturation',this.value)"><span id="v-saturation">0</span></label>
+        <label>Sharpness<input type="range" id="cam-sharpness" min="-2" max="2" value="0" oninput="setCam('sharpness',this.value)"><span id="v-sharpness">0</span></label>
+        <div style="display:flex;gap:12px;margin-top:4px">
+            <label style="display:flex;gap:4px;align-items:center"><input type="checkbox" id="cam-hmirror" onchange="setCam('hmirror',this.checked)">H-Mirror</label>
+            <label style="display:flex;gap:4px;align-items:center"><input type="checkbox" id="cam-vflip" onchange="setCam('vflip',this.checked)">V-Flip</label>
+        </div>
     </div>
 </details>
 
@@ -192,6 +210,26 @@ function pollOta() {
 setInterval(updateStatus,1000);
 setInterval(updateWsFps,500);
 updateStatus();
+
+function setCam(key, val) {
+    var body = {};
+    body[key] = (typeof val === 'boolean' || val === true || val === false) ? val : parseInt(val);
+    if (key === 'hmirror' || key === 'vflip') body[key] = !!val;
+    var el = document.getElementById('v-'+key);
+    if (el) el.textContent = val;
+    fetch('/api/camera',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+    .then(function(r){return r.json()}).then(function(d){ loadCamSettings(d); }).catch(function(){});
+}
+function loadCamSettings(d) {
+    ['brightness','contrast','saturation','sharpness'].forEach(function(k){
+        var el = document.getElementById('cam-'+k);
+        var vl = document.getElementById('v-'+k);
+        if (el && d[k] !== undefined) { el.value = d[k]; if(vl) vl.textContent = d[k]; }
+    });
+    if (d.hmirror !== undefined) document.getElementById('cam-hmirror').checked = d.hmirror;
+    if (d.vflip !== undefined) document.getElementById('cam-vflip').checked = d.vflip;
+}
+fetch('/api/camera').then(function(r){return r.json()}).then(loadCamSettings).catch(function(){});
 </script>
 </body>
 </html>
