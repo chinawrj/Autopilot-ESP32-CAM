@@ -1,5 +1,6 @@
 #include "camera_init.h"
 #include "esp_log.h"
+#include "esp_rom_sys.h"
 #include "driver/gpio.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -59,7 +60,8 @@ esp_err_t camera_init(void)
     esp_err_t err;
 
     /* Power-cycle the camera via PWDN pin to ensure clean state after OTA reboot.
-     * Extended delays needed because OTA soft-reboot doesn't fully reset camera. */
+     * OTA uses esp_restart() which doesn't fully reset I2C peripheral or GPIO state,
+     * causing the SCCB bus to be stuck. We do a full power-cycle + I2C bus recovery. */
     gpio_config_t io_conf = {
         .pin_bit_mask = (1ULL << CAM_PIN_PWDN),
         .mode = GPIO_MODE_OUTPUT,
@@ -68,19 +70,40 @@ esp_err_t camera_init(void)
     gpio_set_level(CAM_PIN_PWDN, 1);   /* PWDN HIGH = power down */
     vTaskDelay(pdMS_TO_TICKS(500));
 
-    /* Also reset I2C (SCCB) pins to avoid bus stuck after OTA soft-reboot */
+    /* I2C bus recovery: toggle SCL 9+ times to release any stuck slave.
+     * Also reconfigure SDA/SCL as GPIO to break I2C peripheral hold. */
+    gpio_reset_pin(CAM_PIN_SIOD);
+    gpio_reset_pin(CAM_PIN_SIOC);
     gpio_config_t sccb_conf = {
         .pin_bit_mask = (1ULL << CAM_PIN_SIOD) | (1ULL << CAM_PIN_SIOC),
-        .mode = GPIO_MODE_OUTPUT,
+        .mode = GPIO_MODE_OUTPUT_OD,
+        .pull_up_en = GPIO_PULLUP_ENABLE,
     };
     gpio_config(&sccb_conf);
     gpio_set_level(CAM_PIN_SIOD, 1);
     gpio_set_level(CAM_PIN_SIOC, 1);
-    vTaskDelay(pdMS_TO_TICKS(50));
+    vTaskDelay(pdMS_TO_TICKS(10));
+    for (int i = 0; i < 16; i++) {
+        gpio_set_level(CAM_PIN_SIOC, 0);
+        esp_rom_delay_us(5);
+        gpio_set_level(CAM_PIN_SIOC, 1);
+        esp_rom_delay_us(5);
+    }
+    /* I2C STOP condition */
+    gpio_set_level(CAM_PIN_SIOD, 0);
+    esp_rom_delay_us(5);
+    gpio_set_level(CAM_PIN_SIOC, 1);
+    esp_rom_delay_us(5);
+    gpio_set_level(CAM_PIN_SIOD, 1);
+    vTaskDelay(pdMS_TO_TICKS(10));
+
+    /* Release GPIO pins so camera driver can take over */
+    gpio_reset_pin(CAM_PIN_SIOD);
+    gpio_reset_pin(CAM_PIN_SIOC);
 
     gpio_set_level(CAM_PIN_PWDN, 0);   /* PWDN LOW = power up */
     vTaskDelay(pdMS_TO_TICKS(500));
-    ESP_LOGI(TAG, "Camera power-cycled (PWDN 500ms + I2C reset)");
+    ESP_LOGI(TAG, "Camera power-cycled (PWDN 500ms + I2C bus recovery)");
 
     err = esp_camera_init(&config);
     if (err != ESP_OK) {

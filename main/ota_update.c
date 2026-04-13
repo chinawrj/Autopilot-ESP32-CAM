@@ -8,6 +8,7 @@
 #include "esp_ota_ops.h"
 #include "esp_https_ota.h"
 #include "esp_app_desc.h"
+#include "esp_camera.h"
 
 static const char *TAG = "ota";
 
@@ -39,7 +40,8 @@ static void ota_task(void *arg)
 
     esp_http_client_config_t http_cfg = {
         .url        = url,
-        .timeout_ms = 30000,
+        .timeout_ms = 120000,
+        .buffer_size = 1024,
     };
     esp_https_ota_config_t ota_cfg = {
         .http_config = &http_cfg,
@@ -82,7 +84,11 @@ static void ota_task(void *arg)
 
     s_progress = 100;
     snprintf(s_status, sizeof(s_status), "success, rebooting...");
-    ESP_LOGI(TAG, "OTA successful — rebooting in 2 s");
+    ESP_LOGI(TAG, "OTA successful — deinit camera + reboot in 2 s");
+
+    /* Deinit camera to properly release I2C bus before soft reboot.
+     * Without this, the I2C peripheral stays in a bad state after esp_restart(). */
+    esp_camera_deinit();
 
     free(url);
     vTaskDelay(pdMS_TO_TICKS(2000));
