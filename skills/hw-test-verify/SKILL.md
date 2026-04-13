@@ -18,75 +18,178 @@
 ## 强制规则
 
 > ⛔ **如果没有成功烧录并在串口看到预期输出，该任务不算完成。**
-> ⛔ **如果任务涉及 Web 功能，必须在浏览器中实际验证页面。**
+> ⛔ **如果任务涉及 Web 功能，必须在 Chrome 浏览器中实际验证页面。**
+> ⛔ **串口数据读取必须通过 tmux 下的 `idf.py monitor`，不要直接操作串口设备。**
+
+## 串口设备检测
+
+本项目串口芯片为 CH340，macOS 设备路径为 `/dev/cu.wchusbserial*`。
+
+```bash
+# 检测串口（支持 CH340 / CP2102 / FTDI）
+SERIAL_PORT=$(ls /dev/cu.wchusbserial* /dev/cu.usbserial-* /dev/ttyUSB* 2>/dev/null | head -1)
+echo "Serial port: $SERIAL_PORT"
+# 期望: /dev/cu.wchusbserial110 或类似
+# 如果为空 → USB 线未连接或驱动未安装
+```
 
 ## 测试流程
 
-### 1. 编译 → 烧录 → 串口验证（每次代码变更必做）
+### 1. 编译（tmux）
 
 ```bash
-# 使用 tmux（参见 skills/tmux-session/SKILL.md）
-
-# Step 1: 编译
 tmux_exec "espcam:build" "idf.py build" 300
 # 必须 exit code = 0，否则停下来修 bug
-
-# Step 2: 烧录
-SERIAL_PORT=$(ls /dev/cu.usbserial-* /dev/ttyUSB* 2>/dev/null | head -1)
-tmux_exec "espcam:build" "idf.py -p $SERIAL_PORT flash" 120
-# 必须 exit code = 0
-
-# Step 3: 串口监控（验证启动日志）
-tmux send-keys -t espcam:monitor C-c  # 先停掉之前的 monitor
-sleep 1
-tmux send-keys -t espcam:monitor "idf.py -p $SERIAL_PORT monitor" C-m
-sleep 8  # 等待设备启动
-
-# Step 4: 检查关键日志
-tmux capture-pane -t espcam:monitor -p -S -500 | grep -iE "(wifi|connected|ip|error|panic|http|started|cam)"
+# 失败时读输出:
+# tmux capture-pane -t espcam:build -p -S -500 | grep "error:"
 ```
 
-### 2. 串口日志验证清单
-
-每次上板后，从串口输出中确认以下信息：
-
-| 检查项 | 日志关键词 | 说明 |
-|--------|-----------|------|
-| 无 panic/crash | `Guru Meditation`, `abort()`, `panic` | 任何 crash 必须立即修复 |
-| WiFi 连接 | `sta ip:`, `connected`, `got ip` | 记录分配的 IP 地址 |
-| HTTP 启动 | `httpd`, `server`, `listening` | 确认 Web 服务器启动 |
-| 摄像头初始化 | `cam_hal`, `camera` | 确认摄像头正常 |
-| 内存充足 | 无 `ENOMEM`, `alloc failed` | 内存不足需降分辨率 |
-
-### 3. Web 功能浏览器验证（涉及 HTTP 功能时必做）
+### 2. 烧录（tmux）
 
 ```bash
-# 从串口日志提取设备 IP
-DEVICE_IP=$(tmux capture-pane -t espcam:monitor -p -S -500 | grep -oE 'sta ip: [0-9.]+|got ip:[0-9.]+|IP: [0-9.]+' | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | tail -1)
+SERIAL_PORT=$(ls /dev/cu.wchusbserial* /dev/cu.usbserial-* /dev/ttyUSB* 2>/dev/null | head -1)
+tmux_exec "espcam:build" "idf.py -p $SERIAL_PORT flash" 120
+# 必须 exit code = 0
+# 烧录失败 → 按住 BOOT 按键再试 → 检查 GPIO0/GPIO2
+```
+
+### 3. 串口监控验证（tmux + idf.py monitor）
+
+> ⚠️ **必须使用 `idf.py monitor`** — 它提供地址解码、自动重连、彩色日志等功能。
+> 不要直接用 `screen`/`minicom`/`picocom` 或 Python serial 读串口。
+
+```bash
+# 先停掉之前的 monitor（如果有）
+tmux send-keys -t espcam:monitor C-]
+sleep 1
+tmux send-keys -t espcam:monitor C-c
+sleep 1
+
+# 启动 idf.py monitor
+SERIAL_PORT=$(ls /dev/cu.wchusbserial* /dev/cu.usbserial-* /dev/ttyUSB* 2>/dev/null | head -1)
+tmux send-keys -t espcam:monitor "idf.py -p $SERIAL_PORT monitor" C-m
+
+# 等待设备启动（复位后约 3-8 秒出日志）
+sleep 8
+
+# 通过 tmux capture-pane 读取串口输出
+tmux capture-pane -t espcam:monitor -p -S -500 | tail -50
+```
+
+### 4. 串口日志验证清单
+
+从 tmux capture-pane 输出中逐项确认：
+
+```bash
+OUTPUT=$(tmux capture-pane -t espcam:monitor -p -S -500)
+
+# 检查致命错误（任何一项匹配则必须修复）
+echo "$OUTPUT" | grep -iE "Guru Meditation|abort|panic|assert failed" && echo "⛔ CRASH DETECTED" || echo "✅ No crash"
+
+# 检查 WiFi 连接
+echo "$OUTPUT" | grep -iE "sta ip:|got ip|wifi connected" || echo "⚠️ WiFi not connected"
+
+# 提取设备 IP
+DEVICE_IP=$(echo "$OUTPUT" | grep -oE 'sta ip: [0-9.]+|got ip:[0-9.]+|IP:[0-9. ]+' | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | tail -1)
 echo "Device IP: $DEVICE_IP"
 
-# 验证 HTTP 响应
-curl -s -o /dev/null -w "%{http_code}" http://$DEVICE_IP/
-# 期望: 200
+# 检查 HTTP 服务
+echo "$OUTPUT" | grep -iE "httpd|server.*start|listening" || echo "⚠️ HTTP server not started"
 
-# 验证视频流头
-curl -s --max-time 3 http://$DEVICE_IP/stream/tcp | head -c 200 | xxd | head -5
-# 期望: 看到 JPEG 头 (ff d8 ff) 或 multipart boundary
+# 检查摄像头
+echo "$OUTPUT" | grep -iE "cam_hal|camera init|sensor detected" || echo "⚠️ Camera not initialized"
 
-# 验证 API
+# 检查内存
+echo "$OUTPUT" | grep -iE "ENOMEM|alloc failed|out of memory" && echo "⛔ MEMORY ERROR" || echo "✅ Memory OK"
+```
+
+| 检查项 | 日志关键词 | 严重度 |
+|--------|-----------|--------|
+| 无 crash | `Guru Meditation`, `panic`, `abort` | ⛔ 必须修复 |
+| WiFi 已连接 | `sta ip:`, `got ip` | ⛔ 必须成功 |
+| HTTP 已启动 | `httpd`, `server`, `listening` | ⛔ 必须成功 |
+| 摄像头已初始化 | `cam_hal`, `camera` | ⛔ 必须成功 |
+| 无内存错误 | 无 `ENOMEM`, `alloc failed` | ⛔ 必须修复 |
+
+### 5. Web 功能验证
+
+#### 5a. curl 快速验证（必做）
+
+```bash
+# HTTP 首页
+curl -s -o /dev/null -w "HTTP %{http_code}\n" http://$DEVICE_IP/
+# 期望: HTTP 200
+
+# MJPEG 视频流（读 3 秒检查流头）
+curl -s --max-time 3 http://$DEVICE_IP/stream/tcp 2>/dev/null | head -c 200 | xxd | head -5
+# 期望: JPEG 头 (ff d8 ff) 或 multipart boundary "--frame"
+
+# LED API
 curl -s http://$DEVICE_IP/api/led -X POST -d '{"state":"on"}'
-# 期望: 200 + LED 物理亮起
+# 期望: 200 + LED 物理亮起（肉眼确认 GPIO33）
 ```
 
-### 4. 验证失败处理
+#### 5b. Chrome 浏览器深度验证（Web 功能必做）
+
+使用 patchright (反检测 Playwright) 打开 Chrome 实际渲染页面：
+
+```python
+# 需要 ~/patchright-env/ 或系统中安装了 patchright
+from patchright.sync_api import sync_playwright
+import tempfile, time
+
+pw = sync_playwright().start()
+ctx = pw.chromium.launch_persistent_context(
+    user_data_dir=tempfile.mkdtemp(),
+    channel='chrome',
+    headless=False,  # 有头模式，可视化验证
+    no_viewport=True,
+)
+page = ctx.pages[0] if ctx.pages else ctx.new_page()
+
+DEVICE_IP = "REPLACE_WITH_DEVICE_IP"  # 从串口日志获取
+
+# 验证首页
+page.goto(f"http://{DEVICE_IP}/", timeout=10000)
+print(f"Title: {page.title()}")
+
+# 验证视频流
+page.goto(f"http://{DEVICE_IP}/stream/tcp", timeout=10000)
+time.sleep(3)
+img = page.locator("img").first
+if img.count():
+    print(f"Stream img src: {img.get_attribute('src')}")
+
+# 验证 HUD（FPS + 温度）
+fps_ok = page.locator("text=/FPS|fps/i").count() > 0
+temp_ok = page.locator("text=/°C|temperature/i").count() > 0
+print(f"FPS visible: {fps_ok}, Temp visible: {temp_ok}")
+
+# 验证 LED 按钮
+led_btn = page.locator("button").filter(has_text="LED").first
+if led_btn.count():
+    led_btn.click()
+    print("LED toggled — verify physically")
+
+# 截图存证
+page.screenshot(path="/tmp/espcam-verify.png")
+print("Screenshot: /tmp/espcam-verify.png")
+
+ctx.close()
+pw.stop()
+```
+
+> 如果 patchright 不可用，回退到 5a 的 curl 验证。
+
+### 6. 验证失败处理
 
 ```
-编译失败 → 读错误日志 → 修代码 → 重新编译（不要跳过）
+编译失败 → tmux capture-pane 读错误 → 修代码 → 重新编译
 烧录失败 → 检查串口连接 → 按住 BOOT 按键重试 → 检查 GPIO0/GPIO2
-串口无输出 → 检查 TX/RX 接线 → 换波特率 → 重新烧录
-WiFi 连不上 → 检查 ~/.esp-wifi-credentials → 检查路由器
-panic/crash → 读 backtrace → 定位代码行 → 修复
-网页打不开 → 确认 IP → 检查防火墙 → 检查 HTTP server 日志
+串口无输出 → 检查 TX/RX 接线 → tmux capture-pane 确认 monitor 是否启动
+WiFi 连不上 → 检查 ~/.esp-wifi-credentials → 检查路由器 → 看串口错误码
+panic/crash → 从 tmux capture-pane 读 backtrace → idf.py monitor 会自动解码地址
+网页打不开 → 确认 IP → curl 测试 → 检查串口中 HTTP server 日志
 ```
 
 ## 验收标准
@@ -94,8 +197,8 @@ panic/crash → 读 backtrace → 定位代码行 → 修复
 一个任务的"完成"必须满足以下全部条件：
 
 - [ ] `idf.py build` 零错误零警告
-- [ ] `idf.py flash` 成功烧录
-- [ ] 串口日志无 panic/crash/error
-- [ ] 预期功能在串口中可观察到（WiFi 连接、HTTP 启动等）
-- [ ] 如涉及 Web 功能：浏览器或 curl 验证通过
+- [ ] `idf.py flash` 成功烧录到开发板
+- [ ] `idf.py monitor`（tmux 中）串口日志无 crash/error
+- [ ] 预期功能在串口日志中可观察到
+- [ ] 如涉及 Web 功能：curl + Chrome 浏览器验证通过
 - [ ] git commit 记录本次变更

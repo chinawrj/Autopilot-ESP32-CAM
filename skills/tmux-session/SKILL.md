@@ -87,14 +87,14 @@ tmux_exec "espcam:build" "idf.py build" 300
 #### 烧录
 ```bash
 # 先确认串口设备
-SERIAL_PORT=$(ls /dev/cu.usbserial-* /dev/ttyUSB* 2>/dev/null | head -1)
+SERIAL_PORT=$(ls /dev/cu.wchusbserial* /dev/cu.usbserial-* /dev/ttyUSB* 2>/dev/null | head -1)
 tmux_exec "espcam:build" "idf.py -p $SERIAL_PORT flash" 120
 ```
 
 #### 串口监控
 ```bash
 # monitor 不会自己结束，用 send-keys 启动，用 capture-pane 读取
-SERIAL_PORT=$(ls /dev/cu.usbserial-* /dev/ttyUSB* 2>/dev/null | head -1)
+SERIAL_PORT=$(ls /dev/cu.wchusbserial* /dev/cu.usbserial-* /dev/ttyUSB* 2>/dev/null | head -1)
 tmux send-keys -t espcam:monitor "idf.py -p $SERIAL_PORT monitor" C-m
 
 # 等待几秒后读取输出
