@@ -3,6 +3,7 @@ idf_component_register(
          "wifi_manager.c"
          "camera_init.c"
          "http_server.c"
+         "led_controller.c"
     INCLUDE_DIRS "."
     EMBED_FILES "index.html"
 )

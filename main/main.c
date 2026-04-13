@@ -4,13 +4,15 @@
 #include "wifi_manager.h"
 #include "camera_init.h"
 #include "http_server.h"
+#include "led_controller.h"
+#include "virtual_sensor.h"
 
 static const char *TAG = "main";
 
 void app_main(void)
 {
     ESP_LOGI(TAG, "=== Autopilot ESP32-CAM ===");
-    ESP_LOGI(TAG, "Firmware version: 0.2.0 (M1 streaming)");
+    ESP_LOGI(TAG, "Firmware version: 0.3.0 (M2 HUD)");
 
     /* Initialize WiFi and connect */
     esp_err_t ret = wifi_manager_init();
@@ -26,6 +28,16 @@ void app_main(void)
         ESP_LOGE(TAG, "Camera initialization failed");
         return;
     }
+
+    /* Initialize LED controller */
+    ret = led_controller_init();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "LED controller initialization failed");
+        return;
+    }
+
+    /* Initialize virtual temperature sensor */
+    virtual_sensor_init();
 
     /* Start HTTP server */
     ret = http_server_start();

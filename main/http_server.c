@@ -1,6 +1,7 @@
 #include "http_server.h"
 
 #include <string.h>
+#include <stdio.h>
 #include <sys/time.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -8,6 +9,9 @@
 #include "esp_camera.h"
 #include "esp_log.h"
 #include "esp_timer.h"
+#include "virtual_sensor.h"
+#include "led_controller.h"
+#include "cJSON.h"
 
 static const char *TAG = "httpd";
 
@@ -91,6 +95,69 @@ static esp_err_t stream_tcp_handler(httpd_req_t *req)
     return res;
 }
 
+/* --- GET /api/status handler --- */
+
+static esp_err_t status_handler(httpd_req_t *req)
+{
+    cJSON *root = cJSON_CreateObject();
+    cJSON_AddNumberToObject(root, "fps", s_fps);
+    cJSON_AddNumberToObject(root, "temperature", virtual_sensor_get_temperature());
+    cJSON_AddBoolToObject(root, "led_state", led_get_state());
+
+    const char *json = cJSON_PrintUnformatted(root);
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+    esp_err_t res = httpd_resp_sendstr(req, json);
+
+    cJSON_free((void *)json);
+    cJSON_Delete(root);
+    return res;
+}
+
+/* --- POST /api/led handler --- */
+
+static esp_err_t led_handler(httpd_req_t *req)
+{
+    char buf[64];
+    int ret = httpd_req_recv(req, buf, sizeof(buf) - 1);
+    if (ret <= 0) {
+        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "No body");
+        return ESP_FAIL;
+    }
+    buf[ret] = '\0';
+
+    cJSON *root = cJSON_Parse(buf);
+    if (!root) {
+        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Invalid JSON");
+        return ESP_FAIL;
+    }
+
+    cJSON *state = cJSON_GetObjectItem(root, "state");
+    if (cJSON_IsString(state)) {
+        if (strcmp(state->valuestring, "on") == 0) {
+            led_set(true);
+        } else if (strcmp(state->valuestring, "off") == 0) {
+            led_set(false);
+        } else if (strcmp(state->valuestring, "toggle") == 0) {
+            led_toggle();
+        }
+    }
+    cJSON_Delete(root);
+
+    /* Respond with current state */
+    cJSON *resp = cJSON_CreateObject();
+    cJSON_AddBoolToObject(resp, "led_state", led_get_state());
+    const char *json = cJSON_PrintUnformatted(resp);
+
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+    esp_err_t res = httpd_resp_sendstr(req, json);
+
+    cJSON_free((void *)json);
+    cJSON_Delete(resp);
+    return res;
+}
+
 /* --- Server startup --- */
 
 esp_err_t http_server_start(void)
@@ -122,6 +189,22 @@ esp_err_t http_server_start(void)
         .handler  = stream_tcp_handler,
     };
     httpd_register_uri_handler(server, &stream_uri);
+
+    /* GET /api/status */
+    httpd_uri_t status_uri = {
+        .uri      = "/api/status",
+        .method   = HTTP_GET,
+        .handler  = status_handler,
+    };
+    httpd_register_uri_handler(server, &status_uri);
+
+    /* POST /api/led */
+    httpd_uri_t led_uri = {
+        .uri      = "/api/led",
+        .method   = HTTP_POST,
+        .handler  = led_handler,
+    };
+    httpd_register_uri_handler(server, &led_uri);
 
     ESP_LOGI(TAG, "HTTP server started on port %d", config.server_port);
     return ESP_OK;
