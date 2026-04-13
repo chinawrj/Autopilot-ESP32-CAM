@@ -9,7 +9,7 @@
 set -o pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-SKILLS_DIR="$SCRIPT_DIR/skills"
+SKILLS_DIR="$SCRIPT_DIR/.github/skills"
 
 # 颜色
 RED='\033[0;31m'
