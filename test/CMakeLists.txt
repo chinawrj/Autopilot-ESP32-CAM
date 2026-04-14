@@ -63,4 +63,15 @@ target_include_directories(test_led_controller PRIVATE
 target_link_libraries(test_led_controller unity)
 add_test(NAME led_controller COMMAND test_led_controller)
 
+# === path_utils tests ===
+add_executable(test_path_utils
+    unit/test_path_utils.c
+    ${PROJ_ROOT}/main/path_utils.c
+)
+target_include_directories(test_path_utils PRIVATE
+    ${PROJ_ROOT}/main
+)
+target_link_libraries(test_path_utils unity)
+add_test(NAME path_utils COMMAND test_path_utils)
+
 enable_testing()

@@ -6,9 +6,11 @@ idf_component_register(
          "http_helpers.c"
          "camera_handlers.c"
          "sd_handlers.c"
+         "sd_file_ops.c"
          "led_controller.c"
          "ws_stream.c"
          "ota_update.c"
+         "path_utils.c"
          "stream_server.c"
     INCLUDE_DIRS "."
     PRIV_REQUIRES esp_https_ota app_update
