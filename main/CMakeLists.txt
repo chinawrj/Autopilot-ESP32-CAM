@@ -12,6 +12,7 @@ idf_component_register(
          "ota_update.c"
          "path_utils.c"
          "stream_server.c"
+         "system_info.c"
     INCLUDE_DIRS "."
     PRIV_REQUIRES esp_https_ota app_update
                   esp_netif esp_wifi esp_http_server esp_timer

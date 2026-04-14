@@ -11,4 +11,10 @@
  */
 esp_err_t http_send_json(httpd_req_t *req, cJSON *root);
 
+/**
+ * Send an HTML response with security headers.
+ * @return ESP_OK on success.
+ */
+esp_err_t http_send_html(httpd_req_t *req, const char *html, size_t len);
+
 #endif /* HTTP_HELPERS_H */

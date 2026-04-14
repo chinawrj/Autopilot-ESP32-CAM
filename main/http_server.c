@@ -17,6 +17,7 @@
 #include "http_helpers.h"
 #include "sd_handlers.h"
 #include "camera_handlers.h"
+#include "system_info.h"
 
 static const char *TAG = "httpd";
 
@@ -28,14 +29,12 @@ extern const char stream_ws_html_end[]   asm("_binary_stream_ws_html_end");
 
 static esp_err_t index_handler(httpd_req_t *req)
 {
-    httpd_resp_set_type(req, "text/html");
-    return httpd_resp_send(req, index_html_start, index_html_end - index_html_start);
+    return http_send_html(req, index_html_start, index_html_end - index_html_start);
 }
 
 static esp_err_t stream_ws_page_handler(httpd_req_t *req)
 {
-    httpd_resp_set_type(req, "text/html");
-    return httpd_resp_send(req, stream_ws_html_start, stream_ws_html_end - stream_ws_html_start);
+    return http_send_html(req, stream_ws_html_start, stream_ws_html_end - stream_ws_html_start);
 }
 
 static void httpd_close_fn(httpd_handle_t hd, int fd)
@@ -207,6 +206,9 @@ esp_err_t http_server_start(void)
 
     /* SD card APIs (registered from sd_handlers.c) */
     sd_handlers_register(server);
+
+    /* System diagnostics (registered from system_info.c) */
+    system_info_register(server);
 
     ESP_LOGI(TAG, "HTTP server started on port %d", config.server_port);
     return ESP_OK;
