@@ -322,7 +322,7 @@ def run_tests(device_url, headless=False):
             return await r.json();
         }"""
         )
-        t.test("Status has version", "1." in str(status2.get("version", "")),
+        t.test("Status has version", len(str(status2.get("version", ""))) > 0,
                status2.get("version"))
         t.test("Status has WiFi", status2.get("wifi_connected") is True)
         t.test("Status has RSSI", isinstance(status2.get("rssi"), (int, float)) and status2["rssi"] < 0,

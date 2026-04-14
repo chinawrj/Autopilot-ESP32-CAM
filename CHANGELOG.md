@@ -2,6 +2,115 @@
 
 All notable changes to Autopilot ESP32-CAM are documented in this file.
 
+## [v2.0.0] — 2026-04-15
+
+### 🎉 Major Release — Production-Ready Autonomous Camera Server
+
+v2.0.0 represents the culmination of 33 days of daily hardware-verified iteration,
+transforming a bare ESP32-CAM into a production-quality camera web server with
+comprehensive monitoring, security, and test coverage.
+
+### 🛡️ Reliability & Safety
+
+- **Task Watchdog Timer** — 30-second hardware watchdog on all critical tasks
+  - Automatic reboot on task hang with panic handler
+  - Covers main task, WiFi, and HTTP server tasks
+  - Configurable timeout via `sdkconfig.defaults`
+- **Heap Integrity Monitoring** — Periodic heap checks in main loop
+  - `heap_caps_check_integrity_all()` validates heap structure
+  - Logs warnings when free heap drops below safety threshold
+  - Health status exposed via `/api/system/info`
+- **Graceful Error Recovery** — All error paths audited and hardened
+  - `cJSON_PrintUnformatted()` NULL checks on all callers (OOM protection)
+  - Camera frame acquisition failures return proper HTTP errors
+  - SD card operations degrade gracefully when card is removed
+
+### 🔒 Security (from v1.4.0)
+
+- **Path Traversal Protection** — SD card handlers validate all user-supplied paths
+  - `path_utils.c/h`: `path_is_safe()` and `path_sanitize_sd()` module
+  - Rejects `../` traversal, absolute paths, backslash paths
+  - Applied to `/api/sd/list`, `/api/sd/file/*`, `/api/sd/delete`
+- **HTTP Security Headers** — All responses include:
+  - `X-Content-Type-Options: nosniff`
+  - `X-Frame-Options: SAMEORIGIN`
+  - `Cache-Control: no-store`
+- **Rate Limiting** — API endpoints protected against abuse
+  - Token bucket algorithm with configurable burst/refill rates
+  - Returns `429 Too Many Requests` with `Retry-After` header
+
+### ✨ Features (since v1.3.0)
+
+- **System Diagnostics API** — `GET /api/system/info` returns comprehensive device info:
+  - Chip model, cores, revision, WiFi/BT capabilities
+  - ESP-IDF version, heap/PSRAM usage, uptime, task count
+  - WiFi RSSI/status, streaming FPS (WS + MJPEG)
+  - Health section: heap_ok, memory_ok, wdt_timeout_s
+- **Enhanced Dashboard** — Homepage panels show chip, IDF version, PSRAM, task count
+- **App.js Extraction** — Frontend JavaScript served as separate cacheable file
+  - Deferred MJPEG stream loading (500ms) prevents connection overload
+- **HTML Response Helper** — `http_send_html()` centralizes HTML + security headers
+- **Camera Settings API** — Full GET/POST `/api/camera` for runtime adjustments
+- **mDNS Discovery** — Access via `http://espcam.local/`
+
+### 🏗️ Architecture
+
+- **Dual HTTP Server** — Port 80 (API + pages + WebSocket) / Port 8081 (MJPEG stream)
+- **14 Source Files** — Modular architecture with extracted handlers:
+  - `camera_handlers.c/h` — Camera settings GET/POST
+  - `sd_handlers.c/h` + `sd_file_ops.c/h` — SD card operations
+  - `system_info.c/h` — System diagnostics
+  - `path_utils.c/h` — Path security validation
+  - `rate_limiter.c/h` — Token bucket rate limiting
+  - `http_helpers.c/h` — JSON/HTML response helpers
+- **Component Library** — `fps_counter/` and `sd_card/` reusable components
+
+### 🧪 Testing
+
+- **50 Unit Tests** — 5 suites, host-based (no hardware needed)
+  - fps_counter (7), virtual_sensor (6), led_controller (7), path_utils (23), rate_limiter (7)
+- **39 Browser Integration Tests** — Patchright-based, hardware-verified
+  - Homepage & panels, APIs, security headers, camera, LED, SD, OTA, MJPEG, CORS, 404
+- **Every code change**: build → flash → serial verify → browser verify on real hardware
+
+### 📊 Performance
+
+| Metric | Value |
+|--------|-------|
+| Firmware Size | ~1.29 MB (59% partition free) |
+| Free Heap | ~137 KB internal, ~4 MB total |
+| PSRAM Free | ~3943 KB / 4096 KB |
+| MJPEG FPS | ~10 fps (VGA) |
+| WebSocket FPS | ~10 fps (VGA) |
+| Boot Time | < 3 seconds to all services ready |
+| WiFi Reconnect | ~2s recovery |
+| Unit Tests | 50/50 (5 suites) |
+| Integration Tests | 39/39 (Patchright browser) |
+| Compile Warnings | 0 |
+| Source Files | 14 C files, ~2000 lines total |
+
+### 📅 Full Development Timeline
+
+| Day | Milestone | Deliverable |
+|-----|-----------|-------------|
+| 1 | M0 Scaffold | ESP-IDF project + WiFi manager |
+| 3 | M1 TCP Stream | MJPEG over HTTP |
+| 4 | M3 LED Control | GPIO33 web control |
+| 5 | M2 HUD Overlay | FPS + temperature overlay |
+| 8 | M4 WebSocket | WS video + control + heartbeat |
+| 11 | M5 Stability | Memory + stress + reconnect tests |
+| 13 | **v1.0.0** | 🎉 First release — complete camera web server |
+| 18 | **v1.1.0** | OTA + Snapshot + Unified Dashboard |
+| 21 | **v1.2.0** | mDNS + Camera Settings |
+| 23 | **v1.3.0** | SD Card Storage + Unit Tests |
+| 27 | **v1.4.0** | Path Security + System Diagnostics |
+| 30 | JS Extraction | App.js + Rate Limiting |
+| 31 | Watchdog | Task WDT + Heap Monitoring + Error Audit |
+| 32 | Test Sprint | 39 browser tests + API docs + README |
+| 33 | **v2.0.0** | 🏆 **Production-ready stable release** |
+
+---
+
 ## [v1.4.0] — 2026-04-14
 
 ### 🔒 Security

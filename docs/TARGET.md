@@ -387,3 +387,19 @@
   - [x] Build: 无需重新编译 (纯测试+文档)
   - [x] Browser (Patchright): 39/39 pass
   - [x] Unit Tests: 50/50 pass (5 suites)
+
+### Day 33 — v2.0.0 Release Day 🏆
+
+- [x] Pre-release 回归测试
+  - [x] Unit tests: 50/50 (5 suites)
+  - [x] Browser tests: 39/39 (Patchright)
+  - [x] 硬件健康: heap_ok, memory_ok, WDT active
+- [x] Version bump: 1.4.0 → 2.0.0
+- [x] CHANGELOG.md: v2.0.0 全面发布说明
+- [x] RELEASE_NOTES.md: 更新为 v2.0.0
+- [x] Build → Flash → 验证
+  - [x] 编译: 0 warnings, ~1.29 MB
+  - [x] 烧录: CH340 串口成功
+  - [x] 版本确认: /api/status → version: 2.0.0
+  - [x] 烧录后回归: 39/39 browser tests ✅
+- [x] Git tag v2.0.0 + push
