@@ -73,7 +73,7 @@ def run_tests(device_url, headless=False):
         page.goto(f"{device_url}/", timeout=8000)
         title = page.title()
         t.test("Homepage loads", "ESP32" in title or "Autopilot" in title, title)
-        time.sleep(0.5)
+        time.sleep(1)
 
         # --- app.js external script ---
         js_resp = page.evaluate(
@@ -192,6 +192,151 @@ def run_tests(device_url, headless=False):
         page.goto(f"{device_url}/stream/ws", timeout=8000)
         ws_title = page.title()
         t.test("WS stream page", len(ws_title) > 0, ws_title)
+        time.sleep(0.3)
+
+        # --- OTA status ---
+        ota = page.evaluate(
+            """async () => {
+            const r = await fetch('/api/ota/status');
+            return await r.json();
+        }"""
+        )
+        t.test("OTA status", ota.get("status") == "idle" and "version" in ota,
+               f"status={ota.get('status')}")
+        time.sleep(0.3)
+
+        # --- SD card status ---
+        sd = page.evaluate(
+            """async () => {
+            const r = await fetch('/api/sd/status');
+            return await r.json();
+        }"""
+        )
+        t.test("SD status", "mounted" in sd, f"mounted={sd.get('mounted')}")
+        time.sleep(0.3)
+
+        # --- SD list (root) ---
+        sd_list = page.evaluate(
+            """async () => {
+            const r = await fetch('/api/sd/list');
+            return await r.json();
+        }"""
+        )
+        t.test("SD list", "mounted" in sd_list or "error" in sd_list)
+        time.sleep(0.3)
+
+        # --- MJPEG stream (check content-type via curl, MJPEG is infinite stream) ---
+        # Navigate away from homepage first to release the browser's MJPEG connection
+        page.goto("about:blank", timeout=3000)
+        time.sleep(2)
+        import subprocess
+        host = device_url.replace("http://", "").replace("https://", "")
+        curl_result = subprocess.run(
+            ["curl", "-s", "-o", "/dev/null", "-w", "%{content_type}",
+             "--max-time", "2", f"http://{host}:8081/stream/tcp"],
+            capture_output=True, text=True
+        )
+        curl_ct = curl_result.stdout.strip()
+        t.test("MJPEG stream headers", curl_ct.startswith("multipart/"), curl_ct)
+        # Navigate back to device for remaining tests
+        page.goto(f"{device_url}/", timeout=8000)
+        time.sleep(1)
+
+        # --- Camera POST (set and restore quality) ---
+        cam_set = page.evaluate(
+            """async () => {
+            const r = await fetch('/api/camera', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({quality: 20})
+            });
+            return await r.json();
+        }"""
+        )
+        t.test("Camera POST", cam_set.get("quality") == 20, f"quality={cam_set.get('quality')}")
+        # Restore default quality
+        page.evaluate(
+            """async () => {
+            await fetch('/api/camera', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({quality: 12})
+            });
+        }"""
+        )
+        time.sleep(0.3)
+
+        # --- LED on/off cycle ---
+        led_on = page.evaluate(
+            """async () => {
+            const r = await fetch('/api/led', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({state: 'on'})
+            });
+            return await r.json();
+        }"""
+        )
+        t.test("LED on", led_on.get("led_state") is True)
+        led_off = page.evaluate(
+            """async () => {
+            const r = await fetch('/api/led', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({state: 'off'})
+            });
+            return await r.json();
+        }"""
+        )
+        t.test("LED off", led_off.get("led_state") is False)
+        time.sleep(0.3)
+
+        # --- LED bad request ---
+        led_bad = page.evaluate(
+            """async () => {
+            const r = await fetch('/api/led', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: 'not json'
+            });
+            return {status: r.status};
+        }"""
+        )
+        t.test("LED bad JSON", led_bad.get("status") == 400)
+        time.sleep(0.3)
+
+        # --- 404 for unknown route ---
+        resp_404 = page.evaluate(
+            """async () => {
+            const r = await fetch('/api/nonexistent');
+            return {status: r.status};
+        }"""
+        )
+        t.test("404 unknown route", resp_404.get("status") == 404)
+        time.sleep(0.3)
+
+        # --- Status API has version ---
+        status2 = page.evaluate(
+            """async () => {
+            const r = await fetch('/api/status');
+            return await r.json();
+        }"""
+        )
+        t.test("Status has version", "1." in str(status2.get("version", "")),
+               status2.get("version"))
+        t.test("Status has WiFi", status2.get("wifi_connected") is True)
+        t.test("Status has RSSI", isinstance(status2.get("rssi"), (int, float)) and status2["rssi"] < 0,
+               f"{status2.get('rssi')}dBm")
+        time.sleep(0.3)
+
+        # --- CORS header ---
+        cors = page.evaluate(
+            """async () => {
+            const r = await fetch('/api/status');
+            return r.headers.get('Access-Control-Allow-Origin');
+        }"""
+        )
+        t.test("CORS header", cors == "*")
 
         browser.close()
 

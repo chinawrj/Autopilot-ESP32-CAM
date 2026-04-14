@@ -8,7 +8,7 @@
 
 **[中文文档 →](README_CN.md)**
 
-A real-time camera web server built on the **YD-ESP32-CAM** (ESP32-WROVER-E-N8R8) development board. Supports dual-path video streaming (TCP MJPEG + WebSocket), real-time HUD overlay, and remote LED control. Developed entirely by an AI Agent through daily iterations — from zero to delivery.
+A real-time camera web server built on the **YD-ESP32-CAM** (ESP32-WROVER-E-N8R8) development board. Supports dual-path video streaming (TCP MJPEG + WebSocket), real-time HUD overlay, SD card storage, OTA firmware updates, and comprehensive system diagnostics. Developed entirely by an AI Agent through daily iterations — from zero to delivery.
 
 <p align="center">
   <img src="docs/images/mjpeg-stream.png" width="48%" alt="MJPEG Stream with HUD">
@@ -29,13 +29,17 @@ A real-time camera web server built on the **YD-ESP32-CAM** (ESP32-WROVER-E-N8R8
 | **OTA Firmware Update** | Over-the-air upgrade via `POST /api/ota` with progress tracking and rollback protection |
 | **Snapshot API** | `GET /api/snapshot` returns a single JPEG frame for capture/download |
 | **Unified Dashboard** | Single-page UI with tab switching (TCP / WebSocket), all controls on one page |
-| **Heartbeat** | 5-second periodic heartbeat with FPS, client count, and heap memory stats |
-| **WiFi Auto-Reconnect** | Exponential backoff reconnection (1s → 10s), infinite retry after initial connect |
-| **mDNS Discovery** | Access via `http://espcam.local/` — no need to remember IP addresses |
 | **Camera Settings** | Real-time camera parameter adjustment (brightness, contrast, saturation, mirror, flip) via `/api/camera` |
 | **SD Card Storage** | Micro SD card support: capture JPEG to SD, browse/download/delete files via `/api/sd/*` |
-| **Unit Tests** | 20 host-based unit tests (fps_counter, virtual_sensor, led_controller) via Unity framework |
-| **Heap Monitoring** | `/api/status` returns real-time heap info with RSSI, uptime; 30s serial logging |
+| **System Diagnostics** | `/api/system/info` with chip info, memory stats, health status, WiFi RSSI |
+| **Task Watchdog** | Hardware watchdog timer (30s) with automatic reboot on hang |
+| **Heap Monitoring** | Periodic heap integrity checks, low memory warnings, health API |
+| **Rate Limiting** | OTA and SD delete endpoints rate-limited to prevent abuse |
+| **Path Security** | SD card file access sanitized against path traversal attacks |
+| **WiFi Auto-Reconnect** | Exponential backoff reconnection (1s → 10s), infinite retry after initial connect |
+| **mDNS Discovery** | Access via `http://espcam.local/` — no need to remember IP addresses |
+| **Integration Tests** | 39 browser-based tests + 50 unit tests covering all endpoints |
+| **Heartbeat** | 5-second periodic heartbeat with FPS, client count, and heap memory stats |
 
 ## Hardware
 
@@ -217,31 +221,32 @@ Single-page application with tab switching between TCP MJPEG and WebSocket strea
 
 ## API Reference
 
-### GET `/api/status`
+Full API documentation is available in **[docs/API.md](docs/API.md)**.
 
-```json
-{
-  "fps": 10.5,
-  "temperature": 25.3,
-  "led_state": false,
-  "heap_free": 4224764,
-  "heap_min": 4161592,
-  "rssi": -45,
-  "uptime": 3600,
-  "wifi_connected": true,
-  "version": "1.3.0"
-}
-```
-
-### POST `/api/led`
+Quick reference for common operations:
 
 ```bash
 # Toggle LED
-curl -X POST http://192.168.1.171/api/led -d '{"state":"toggle"}'
+curl -X POST http://<IP>/api/led -d '{"state":"toggle"}'
 
-# Turn ON / OFF
-curl -X POST http://192.168.1.171/api/led -d '{"state":"on"}'
-curl -X POST http://192.168.1.171/api/led -d '{"state":"off"}'
+# Take snapshot
+curl -o snapshot.jpg http://<IP>/api/snapshot
+
+# Camera settings
+curl http://<IP>/api/camera
+curl -X POST http://<IP>/api/camera -d '{"brightness":1,"vflip":true}'
+
+# System status
+curl http://<IP>/api/status
+curl http://<IP>/api/system/info
+
+# SD card
+curl http://<IP>/api/sd/status
+curl http://<IP>/api/sd/list
+curl -X POST http://<IP>/api/sd/capture
+
+# OTA update
+curl -X POST http://<IP>/api/ota -d '{"url":"http://server/firmware.bin"}'
 ```
 
 ### WebSocket `/ws/stream`
@@ -265,78 +270,6 @@ curl -X POST http://192.168.1.171/api/led -d '{"state":"off"}'
 {"action": "get_status"}
 ```
 
-### GET `/api/snapshot`
-
-Returns a single JPEG frame (`Content-Type: image/jpeg`).
-
-```bash
-curl -o snapshot.jpg http://192.168.1.171/api/snapshot
-```
-
-### POST `/api/ota`
-
-```bash
-curl -X POST http://192.168.1.171/api/ota -d '{"url":"http://192.168.1.100:8070/firmware.bin"}'
-```
-
-### GET `/api/camera`
-
-Returns current camera sensor settings.
-
-```json
-{"brightness": 0, "contrast": 0, "saturation": 0, "sharpness": 0,
- "hmirror": false, "vflip": false, "quality": 12, "framesize": 10}
-```
-
-### POST `/api/camera`
-
-Update camera settings (partial JSON accepted — send only changed fields).
-
-```bash
-curl -X POST http://192.168.1.171/api/camera -d '{"brightness":1,"vflip":true}'
-```
-
-### GET `/api/ota/status`
-
-```json
-{"status": "idle", "progress": 0, "message": ""}
-```
-
-### GET `/api/sd/status`
-
-```json
-{"mounted": true, "name": "SD32G", "total_bytes": 31914983424, "free_bytes": 31903055872}
-```
-
-### GET `/api/sd/list`
-
-```json
-{"files": [{"name": "img_001.jpg", "size": 12345}]}
-```
-
-### POST `/api/sd/capture`
-
-Captures a JPEG snapshot and saves it to the SD card.
-
-```bash
-curl -X POST http://192.168.1.171/api/sd/capture
-# Response: {"filename": "img_001.jpg", "size": 12345}
-```
-
-### GET `/api/sd/file/{filename}`
-
-Downloads a file from the SD card (`Content-Type: image/jpeg` for `.jpg`).
-
-```bash
-curl -o photo.jpg http://192.168.1.171/api/sd/file/img_001.jpg
-```
-
-### POST `/api/sd/delete`
-
-```bash
-curl -X POST http://192.168.1.171/api/sd/delete -d '{"filename":"img_001.jpg"}'
-```
-
 ## Performance
 
 | Metric | Value |
@@ -346,51 +279,50 @@ curl -X POST http://192.168.1.171/api/sd/delete -d '{"filename":"img_001.jpg"}'
 | Multi-client | 3 WS + 1 MJPEG simultaneous, 0 errors |
 | JPEG Frame Size | ~10-15 KB (VGA, q=12) |
 | Free Heap | ~4.2 MB (with PSRAM) |
-| Firmware Size | ~1.2 MB (dual OTA partition) |
+| Firmware Size | ~1.3 MB (59% partition free) |
 | Partition Layout | Dual OTA (3MB × 2) + 1.97MB SPIFFS |
 | WiFi Reconnect | Auto, 1-10s exponential backoff |
-| Total C Code | ~1600 lines across 13 source files |
-| Unit Tests | 20/20 (3 test suites, host-based) |
+| Total C Code | ~1,700 lines across 14 source files |
+| Browser Tests | 39 integration tests (Patchright) |
+| Unit Tests | 50 host-based tests (5 suites, Unity) |
 
 ## Project Structure
 
 ```
 ├── main/
-│   ├── main.c              # Entry point, init chain + heap logging
+│   ├── main.c              # Entry point, watchdog + heap monitoring
 │   ├── wifi_manager.c/h    # WiFi STA management, auto-reconnect
 │   ├── camera_init.c/h     # OV2640 camera initialization + I2C recovery
 │   ├── http_server.c/h     # HTTP server :80, API routes, WebSocket upgrade
-│   ├── http_helpers.c/h    # JSON response helper (http_send_json)
+│   ├── http_helpers.c/h    # JSON response helper with security headers
+│   ├── camera_handlers.c/h # Camera GET/POST endpoint handlers
 │   ├── stream_server.c/h   # Independent MJPEG stream server :8081
 │   ├── ws_stream.c/h       # WebSocket video stream + control messages
 │   ├── ota_update.c/h      # OTA firmware update with rollback protection
 │   ├── led_controller.c/h  # GPIO33 LED driver
-│   ├── sd_handlers.c/h     # SD card REST API handlers (5 endpoints)
+│   ├── sd_handlers.c/h     # SD card REST API (status, list, delete)
+│   ├── sd_file_ops.c/h     # SD card file operations (capture, download)
+│   ├── system_info.c/h     # System diagnostics + health API
+│   ├── rate_limiter.c/h    # Generic token-bucket rate limiter
+│   ├── path_utils.c/h      # Path sanitization for SD card security
 │   ├── index.html          # Unified dashboard (TCP/WS tabs + all controls)
+│   ├── app.js              # Frontend JavaScript (extracted, cacheable)
 │   └── stream_ws.html      # WebSocket stream standalone page
 ├── components/
 │   ├── virtual_sensor/     # Virtual temperature sensor component
 │   ├── fps_counter/        # Reusable FPS calculation component
 │   └── sd_card/            # SD card driver (1-bit SDMMC + VFS FAT)
 ├── test/
-│   ├── unit/               # Unit tests (fps_counter, virtual_sensor, led_controller)
+│   ├── unit/               # Unit tests (fps, sensor, led, path, rate_limiter)
+│   ├── integration/        # Browser integration tests (39 tests, Patchright)
 │   ├── mocks/              # ESP-IDF mock layer for host-based testing
 │   └── CMakeLists.txt      # Host build: cmake && make && ctest
-├── tools/
-│   ├── provision-wifi.sh       # WiFi credential injection
-│   ├── quality_audit.py        # API test suite (80 tests)
-│   ├── browser_qa.py           # Browser UI test suite (50 tests)
-│   ├── regression_test.py      # Browser regression test
-│   ├── ota_e2e_test.py         # OTA end-to-end test
-│   ├── heap_monitor.py         # Heap memory trend monitor
-│   ├── multi_client_test.py    # Multi-client stress test
-│   ├── wifi_reconnect_test.py  # WiFi reconnect test
-│   ├── browser_verify.py       # Browser automation verification
-│   └── take_screenshots.py     # Release screenshot tool
 ├── docs/
+│   ├── API.md              # Full REST API documentation
 │   ├── TARGET.md           # Milestone tracking
 │   ├── images/             # Screenshots for documentation
-│   └── daily-logs/         # Daily development logs (Day 001–024)
+│   └── daily-logs/         # Daily development logs
+├── tools/                  # Python test & automation tools
 ├── CHANGELOG.md            # Version history
 ├── sdkconfig.defaults      # ESP-IDF default configuration
 ├── partitions.csv          # Partition table (dual OTA 3MB×2 + 1.97MB SPIFFS)
@@ -430,6 +362,9 @@ The human's role was limited to: connecting the hardware, providing WiFi credent
 | Release v1.2.0 | Day 21 | mDNS discovery + Camera Settings API |
 | Refactoring | Day 22 | FPS component + JSON helper + 20 unit tests |
 | Release v1.3.0 | Day 23 | SD Card Storage + Unit Test framework |
+| M7: Security & JS | Day 30 | JS extraction + rate limiting + path security |
+| Release v1.4.0 | Day 30 | System diagnostics + security hardening |
+| M8: Release Prep | Day 31-32 | Watchdog + heap monitoring + 39 browser tests |
 
 Every code change was build → flash → serial verify → browser verify on real hardware. See [docs/daily-logs/](docs/daily-logs/) for detailed development logs.
 

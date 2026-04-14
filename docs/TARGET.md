@@ -374,3 +374,16 @@
   - [x] Flash × 3 cycles: OK
   - [x] Browser (Patchright): 26/26 pass
   - [x] Unit Tests: 50/50 pass (5 suites)
+
+### Day 32: 测试加固 + 文档 (发布冲刺 2/3)
+- [x] 浏览器集成测试: 26 → 39 (新增 13 个测试)
+  - [x] OTA status, SD status/list, MJPEG stream headers
+  - [x] Camera POST (set + restore), LED on/off cycle, LED bad JSON
+  - [x] 404 unknown route, Status version/WiFi/RSSI, CORS header
+  - [x] MJPEG 并发连接处理 (navigate away + curl 验证)
+- [x] API 文档: 创建 docs/API.md (20 个端点完整文档)
+- [x] README 更新: v2.0.0 特性列表, 项目结构, 里程碑时间线
+- [x] 全链路上板验证
+  - [x] Build: 无需重新编译 (纯测试+文档)
+  - [x] Browser (Patchright): 39/39 pass
+  - [x] Unit Tests: 50/50 pass (5 suites)
