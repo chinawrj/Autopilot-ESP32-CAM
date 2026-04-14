@@ -153,9 +153,9 @@
 | Release v1.2.0 | ✅ | 100% |
 | Release v1.3.0 | ✅ | 100% |
 
-**当前工作日**: Day 27
+**当前工作日**: Day 28
 **当前固件版本**: v1.3.0
-**状态**: Day 27 — 路径遍历安全修复 + 测试扩展
+**状态**: Day 28 — 系统诊断 API + HTTP 安全头 + 集成测试脚本
 
 ---
 
@@ -323,4 +323,20 @@
   - [x] Build: 0 warnings, 1.2MB
   - [x] Flash + Serial: 全部启动, 无 crash
   - [x] Browser (Patchright): 9/9 pass (含路径遍历拦截)
+  - [x] Unit Tests: 43/43 pass (4 suites)
+
+### Day 28: 系统诊断 API + HTTP 安全头 + 集成测试
+- [x] 新增 GET /api/system/info (chip, IDF, heap, PSRAM, uptime, tasks, WiFi, FPS)
+  - [x] system_info.c/h (74 lines)
+  - [x] 独立模块 system_info_register() 模式
+- [x] HTTP 安全头: X-Content-Type-Options, X-Frame-Options, Cache-Control
+  - [x] http_send_json() 增强
+  - [x] 新增 http_send_html() helper
+  - [x] HTML handlers 改用集中化函数
+- [x] 集成测试脚本: test/integration/test_browser.py (15 tests)
+  - [x] 覆盖: Homepage, APIs, 安全头, LED, Snapshot, Camera, WS, 路径遍历
+- [x] 全链路上板验证
+  - [x] Build: 0 warnings
+  - [x] Flash + Serial: OK
+  - [x] Browser (Patchright): 15/15 pass
   - [x] Unit Tests: 43/43 pass (4 suites)
