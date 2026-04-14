@@ -73,9 +73,13 @@ select{padding:7px;font-size:12px;border:2px solid #555;border-radius:4px;backgr
 <details class="panel" open>
     <summary>&#x1F4CA; System Info <span id="fw-ver" style="color:#888;font-size:11px"></span></summary>
     <div class="info-grid">
+        <span>Chip</span><span class="val" id="si-chip">--</span>
+        <span>IDF</span><span class="val" id="si-idf">--</span>
         <span>Uptime</span><span class="val" id="si-uptime">--</span>
         <span>Heap Free</span><span class="val" id="si-heap">--</span>
         <span>Heap Min</span><span class="val" id="si-hmin">--</span>
+        <span>PSRAM</span><span class="val" id="si-psram">--</span>
+        <span>Tasks</span><span class="val" id="si-tasks">--</span>
         <span>WiFi RSSI</span><span class="val" id="si-rssi">--</span>
         <span>WiFi Status</span><span class="val" id="si-wifi">--</span>
         <span>Temperature</span><span class="val" id="si-temp">--</span>
@@ -284,6 +288,12 @@ function sdDelete(name){
     .then(function(r){return r.json()}).then(function(){sdRefresh();}).catch(function(){});
 }
 setTimeout(sdRefresh, 2000);
+fetch('/api/system/info').then(function(r){return r.json()}).then(function(d){
+    if(d.chip) document.getElementById('si-chip').textContent=d.chip.model+' ('+d.chip.cores+'-core)';
+    if(d.idf_version) document.getElementById('si-idf').textContent=d.idf_version;
+    if(d.memory) document.getElementById('si-psram').textContent=Math.round(d.memory.psram_free/1024)+'KB / '+Math.round(d.memory.psram_total/1024)+'KB';
+    if(d.task_count) document.getElementById('si-tasks').textContent=d.task_count;
+}).catch(function(){});
 </script>
 </body>
 </html>

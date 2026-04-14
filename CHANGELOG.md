@@ -2,6 +2,53 @@
 
 All notable changes to Autopilot ESP32-CAM are documented in this file.
 
+## [v1.4.0] — 2026-04-14
+
+### 🔒 Security
+
+- **Path Traversal Fix** — SD card HTTP handlers now validate all user-supplied paths
+  - New `path_utils.c/h` module: `path_is_safe()` and `path_sanitize_sd()`
+  - Rejects `../` traversal, absolute paths, backslash paths
+  - Applied to `/api/sd/list`, `/api/sd/file/*`, and `/api/sd/delete`
+- **HTTP Security Headers** — All responses now include:
+  - `X-Content-Type-Options: nosniff` (MIME sniffing prevention)
+  - `X-Frame-Options: SAMEORIGIN` (clickjacking prevention)
+  - `Cache-Control: no-store` (sensitive data caching prevention)
+
+### ✨ New Features
+
+- **System Diagnostics API** — `GET /api/system/info` returns detailed device info:
+  - Chip model, cores, revision, WiFi/BT capabilities
+  - ESP-IDF version
+  - Heap free/min, PSRAM free/total
+  - Uptime (seconds + formatted string), task count
+  - WiFi RSSI/status, streaming FPS (WS + MJPEG)
+- **Enhanced System Info Panel** — Homepage now displays chip, IDF version, PSRAM, task count
+- **HTML Response Helper** — `http_send_html()` centralizes HTML responses with security headers
+
+### 🏗️ Code Quality
+
+- **Refactoring: camera_handlers** — Extracted from `http_server.c` (281→213 lines)
+  - `camera_handlers.c/h`: GET/POST `/api/camera` settings
+  - `camera_handlers_register()` pattern for modular route registration
+- **Refactoring: sd_file_ops** — Extracted from `sd_handlers.c` (250→164 lines)
+  - `sd_file_ops.c/h`: capture + file serving handlers (123 lines)
+- **Unit Test Expansion** — 20→43 tests (3→4 suites)
+  - New `test_path_utils`: 23 tests covering safe paths, traversal attacks, buffer overflow
+- **Integration Test Script** — `test/integration/test_browser.py`
+  - 15 Patchright browser tests: APIs, security headers, UI, path traversal
+  - Reusable: `python3 test/integration/test_browser.py [--device IP]`
+
+### 📊 Stats
+
+- Total C code: ~1800 lines across 17 source files (+3 from v1.3.0)
+- Unit tests: 43/43 (4 suites)
+- Integration tests: 15/15 (Patchright browser)
+- Compile warnings: 0
+- Firmware binary: ~1.2 MB (59% partition free)
+
+---
+
 ## [v1.3.0] — 2026-04-14
 
 ### ✨ New Features
