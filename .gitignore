@@ -29,4 +29,6 @@ __pycache__/
 tools/heap_24h_log.txt
 .playwright-mcp/
 *.png
+!release-*.png
+!demo-*.png
 test/build/
