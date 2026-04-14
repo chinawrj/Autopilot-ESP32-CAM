@@ -4,6 +4,7 @@ idf_component_register(
          "camera_init.c"
          "http_server.c"
          "http_helpers.c"
+         "camera_handlers.c"
          "sd_handlers.c"
          "led_controller.c"
          "ws_stream.c"
