@@ -153,9 +153,9 @@
 | Release v1.2.0 | ✅ | 100% |
 | Release v1.3.0 | ✅ | 100% |
 
-**当前工作日**: Day 25
+**当前工作日**: Day 26
 **当前固件版本**: v1.3.0
-**状态**: Day 25 — GitHub Actions CI/CD pipeline
+**状态**: Day 26 — 代码重构 + 全链路上板验证
 
 ---
 
@@ -294,3 +294,16 @@
 - [x] 测试 CMakeLists.txt 改进: UNITY_DIR 可配置 (支持 CI/本地/ESP-IDF)
 - [x] README 双语添加 CI status badge
 - [x] 推送验证 CI 运行
+
+### Day 26: 代码重构 + 全链路上板验证
+- [x] 重构: 提取 `camera_handlers.c/h` 从 http_server.c
+  - [x] http_server.c: 281 → 213 行 (低于 250 阈值)
+  - [x] camera_handlers.c: 80 行 (GET/POST /api/camera)
+  - [x] camera_handlers_register() 模式复用 sd_handlers 方案
+- [x] 全链路上板验证
+  - [x] Build: 0 warnings, 1.2MB (59% free)
+  - [x] Flash: EXIT_0 via /dev/cu.wchusbserial110
+  - [x] Serial: WiFi + Camera + SD + HTTP + WS 全部启动
+  - [x] Browser (Patchright): 7/8 pass (含 /api/camera 回归)
+  - [x] curl: 全 API 200, MJPEG 236KB/3s
+- [x] 单元测试回归: 20/20 pass
