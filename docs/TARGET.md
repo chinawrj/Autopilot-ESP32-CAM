@@ -152,10 +152,11 @@
 | Release v1.1.1 | ✅ | 100% |
 | Release v1.2.0 | ✅ | 100% |
 | Release v1.3.0 | ✅ | 100% |
+| Release v1.4.0 | ✅ | 100% |
 
-**当前工作日**: Day 28
-**当前固件版本**: v1.3.0
-**状态**: Day 28 — 系统诊断 API + HTTP 安全头 + 集成测试脚本
+**当前工作日**: Day 29
+**当前固件版本**: v1.4.0
+**状态**: Day 29 — v1.4.0 Release (安全强化 + 系统诊断 + UI 增强)
 
 ---
 
@@ -339,4 +340,14 @@
   - [x] Build: 0 warnings
   - [x] Flash + Serial: OK
   - [x] Browser (Patchright): 15/15 pass
+  - [x] Unit Tests: 43/43 pass (4 suites)
+
+### Day 29: v1.4.0 Release
+- [x] 前端增强: System Info 面板新增 chip/IDF/PSRAM/tasks
+- [x] 版本升级: v1.3.0 → v1.4.0
+- [x] CHANGELOG 更新: v1.4.0 完整 release notes
+- [x] 全链路上板验证
+  - [x] Build: 0 warnings
+  - [x] Flash + Serial: OK, version 1.4.0
+  - [x] Browser (Patchright): 18/18 pass
   - [x] Unit Tests: 43/43 pass (4 suites)
