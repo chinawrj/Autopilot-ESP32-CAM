@@ -152,9 +152,9 @@
 | Release v1.1.1 | ✅ | 100% |
 | Release v1.2.0 | ✅ | 100% |
 
-**当前工作日**: Day 21
+**当前工作日**: Day 23
 **当前固件版本**: v1.2.0
-**状态**: v1.2.0 发布 — mDNS 发现 + 摄像头参数调节
+**状态**: Day 23 — SD 卡支持 Phase 1 完成，准备 v1.3.0
 
 ---
 
@@ -254,3 +254,17 @@
   - [x] test_led_controller (7 tests): GPIO mock、toggle、幂等性
 - [x] 上板验证: build ✅ flash ✅ serial ✅ browser ✅ (Patchright)
 - [x] Host 测试: ctest 20/20 pass
+
+### Day 23: SD 卡支持 (Phase 1: 基础读写)
+- [x] SD 卡驱动组件 (components/sd_card/)
+  - [x] 1-bit SDMMC 模式 (GPIO2/14/15)
+  - [x] VFS FAT 挂载到 /sdcard
+  - [x] 无卡时优雅降级 (非致命)
+  - [x] 启用 FATFS LFN 长文件名支持
+- [x] SD 卡 REST API (main/sd_handlers.c/h)
+  - [x] GET /api/sd/status, GET /api/sd/list
+  - [x] POST /api/sd/capture, POST /api/sd/delete
+  - [x] GET /api/sd/file/* (通配符匹配)
+- [x] 前端 SD Card Storage 面板
+- [x] 上板验证: build 0 warnings, flash, serial, Patchright 8/8
+- [x] 单元测试回归: 20/20 pass

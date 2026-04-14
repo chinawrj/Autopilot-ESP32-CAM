@@ -12,6 +12,7 @@
 #include "ws_stream.h"
 #include "ota_update.h"
 #include "stream_server.h"
+#include "sd_card.h"
 
 static const char *TAG = "main";
 
@@ -67,6 +68,11 @@ void app_main(void)
 
     /* Initialize virtual temperature sensor */
     virtual_sensor_init();
+
+    /* Initialize SD card (non-fatal — operates without card) */
+    if (sd_card_init() != ESP_OK) {
+        ESP_LOGW(TAG, "SD card not available — continuing without it");
+    }
 
     /* Initialize WebSocket stream subsystem */
     ret = ws_stream_init();

@@ -105,6 +105,22 @@ select{padding:7px;font-size:12px;border:2px solid #555;border-radius:4px;backgr
     <div class="ota-progress"><div id="ota-bar"></div></div>
     <div class="ota-status" id="ota-status">Ready</div>
 </details>
+<details class="panel">
+    <summary>&#x1F4BE; SD Card Storage <span id="sd-badge" style="color:#888;font-size:11px"></span></summary>
+    <div id="sd-no-card" style="color:#f55;font-size:12px;margin-top:8px;display:none">No SD card detected</div>
+    <div id="sd-content" style="display:none">
+        <div class="info-grid" style="margin-bottom:8px">
+            <span>Card</span><span class="val" id="sd-name">--</span>
+            <span>Total</span><span class="val" id="sd-total">--</span>
+            <span>Free</span><span class="val" id="sd-free">--</span>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+            <button class="btn snap" onclick="sdCapture()" id="sd-cap-btn">&#x1F4F7; Capture to SD</button>
+            <button class="btn" onclick="sdRefresh()">&#x1F504; Refresh</button>
+        </div>
+        <div id="sd-files" style="font-size:12px;color:#aaa;max-height:200px;overflow-y:auto"></div>
+    </div>
+</details>
 <div class="status-bar" id="status">Connecting...</div>
 
 <script>
@@ -230,6 +246,44 @@ function loadCamSettings(d) {
     if (d.vflip !== undefined) document.getElementById('cam-vflip').checked = d.vflip;
 }
 fetch('/api/camera').then(function(r){return r.json()}).then(loadCamSettings).catch(function(){});
+
+function fmtBytes(b){if(b<1024)return b+'B';if(b<1048576)return(b/1024).toFixed(1)+'KB';if(b<1073741824)return(b/1048576).toFixed(1)+'MB';return(b/1073741824).toFixed(2)+'GB';}
+
+function sdRefresh(){
+    fetch('/api/sd/status').then(function(r){return r.json()}).then(function(d){
+        if(!d.mounted){document.getElementById('sd-no-card').style.display='block';document.getElementById('sd-content').style.display='none';document.getElementById('sd-badge').textContent='(no card)';return;}
+        document.getElementById('sd-no-card').style.display='none';document.getElementById('sd-content').style.display='block';
+        document.getElementById('sd-badge').textContent='(mounted)';
+        document.getElementById('sd-name').textContent=d.name||'SD';
+        document.getElementById('sd-total').textContent=fmtBytes(d.total_bytes);
+        document.getElementById('sd-free').textContent=fmtBytes(d.free_bytes);
+    }).catch(function(){document.getElementById('sd-badge').textContent='(error)';});
+    fetch('/api/sd/list').then(function(r){return r.json()}).then(function(d){
+        var c=document.getElementById('sd-files');
+        if(!d.files||d.files.length===0){c.innerHTML='<div style="color:#666">No files</div>';return;}
+        var h='<table style="width:100%;border-collapse:collapse">';
+        h+='<tr style="color:#0ff;border-bottom:1px solid #444"><td>Name</td><td style="text-align:right">Size</td><td></td></tr>';
+        d.files.forEach(function(f){
+            h+='<tr style="border-bottom:1px solid #333"><td>'+f.name+'</td><td style="text-align:right;color:#0f0">'+fmtBytes(f.size)+'</td>';
+            h+='<td style="text-align:right"><a href="/api/sd/file/'+f.name+'" target="_blank" style="color:#0ff;text-decoration:none;margin-right:8px">&#x1F517;</a>';
+            h+='<span style="color:#f55;cursor:pointer" onclick="sdDelete(\''+f.name+'\')">&#x1F5D1;</span></td></tr>';
+        });
+        h+='</table>';c.innerHTML=h;
+    }).catch(function(){});
+}
+function sdCapture(){
+    document.getElementById('sd-cap-btn').disabled=true;
+    fetch('/api/sd/capture',{method:'POST'}).then(function(r){return r.json()}).then(function(d){
+        document.getElementById('sd-cap-btn').disabled=false;
+        if(d.filename) sdRefresh(); else alert(d.error||'Capture failed');
+    }).catch(function(){document.getElementById('sd-cap-btn').disabled=false;alert('Capture failed');});
+}
+function sdDelete(name){
+    if(!confirm('Delete '+name+'?'))return;
+    fetch('/api/sd/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({filename:name})})
+    .then(function(r){return r.json()}).then(function(){sdRefresh();}).catch(function(){});
+}
+setTimeout(sdRefresh, 2000);
 </script>
 </body>
 </html>

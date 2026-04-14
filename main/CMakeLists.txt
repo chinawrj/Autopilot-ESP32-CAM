@@ -4,6 +4,7 @@ idf_component_register(
          "camera_init.c"
          "http_server.c"
          "http_helpers.c"
+         "sd_handlers.c"
          "led_controller.c"
          "ws_stream.c"
          "ota_update.c"
@@ -12,7 +13,7 @@ idf_component_register(
     PRIV_REQUIRES esp_https_ota app_update
                   esp_netif esp_wifi esp_http_server esp_timer
                   driver nvs_flash esp_event virtual_sensor json
-                  fps_counter
+                  fps_counter sd_card
     EMBED_FILES "index.html"
                 "stream_ws.html"
 )
