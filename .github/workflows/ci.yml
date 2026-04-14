@@ -42,14 +42,14 @@ jobs:
 
       - name: Report binary size
         run: |
-          stat --printf="Firmware size: %s bytes\n" build/autopilot-esp32cam.bin
+          ls -lh build/*.bin
 
       - name: Upload firmware artifact
         uses: actions/upload-artifact@v4
         with:
           name: firmware-${{ github.sha }}
           path: |
-            build/autopilot-esp32cam.bin
+            build/autopilot-esp32-cam.bin
             build/bootloader/bootloader.bin
             build/partition_table/partition-table.bin
           retention-days: 30
