@@ -153,9 +153,9 @@
 | Release v1.2.0 | ✅ | 100% |
 | Release v1.3.0 | ✅ | 100% |
 
-**当前工作日**: Day 26
+**当前工作日**: Day 27
 **当前固件版本**: v1.3.0
-**状态**: Day 26 — 代码重构 + 全链路上板验证
+**状态**: Day 27 — 路径遍历安全修复 + 测试扩展
 
 ---
 
@@ -307,3 +307,20 @@
   - [x] Browser (Patchright): 7/8 pass (含 /api/camera 回归)
   - [x] curl: 全 API 200, MJPEG 236KB/3s
 - [x] 单元测试回归: 20/20 pass
+
+### Day 27: 路径遍历安全修复 + 测试覆盖扩展
+- [x] 安全修复: SD handlers 路径遍历漏洞
+  - [x] 新建 path_utils.c/h (path_is_safe + path_sanitize_sd)
+  - [x] sd_list, sd_file, sd_delete 全部应用路径验证
+  - [x] curl 验证: `?path=../../etc` → `{"error":"Invalid path"}`
+- [x] 重构: 拆分 sd_handlers.c (250→164 行)
+  - [x] 提取 sd_file_ops.c/h (capture + file serving, 123 行)
+  - [x] sd_file_ops_register() 模式复用 camera_handlers 方案
+- [x] 测试扩展: 20→43 tests (4 suites)
+  - [x] 新增 test_path_utils: 23 个路径安全测试
+  - [x] 覆盖: 正常路径、遍历攻击、缓冲区溢出、边界条件
+- [x] 全链路上板验证
+  - [x] Build: 0 warnings, 1.2MB
+  - [x] Flash + Serial: 全部启动, 无 crash
+  - [x] Browser (Patchright): 9/9 pass (含路径遍历拦截)
+  - [x] Unit Tests: 43/43 pass (4 suites)
