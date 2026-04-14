@@ -1,5 +1,6 @@
 # Autopilot ESP32-CAM
 
+[![CI](https://github.com/chinawrj/Autopilot-ESP32-CAM/actions/workflows/ci.yml/badge.svg)](https://github.com/chinawrj/Autopilot-ESP32-CAM/actions/workflows/ci.yml)
 [![ESP-IDF](https://img.shields.io/badge/ESP--IDF-v5.x-blue?logo=espressif)](https://docs.espressif.com/projects/esp-idf/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-ESP32--WROVER--E-orange?logo=espressif)](https://www.espressif.com/en/products/socs/esp32)

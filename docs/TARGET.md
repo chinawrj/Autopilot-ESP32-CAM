@@ -153,9 +153,9 @@
 | Release v1.2.0 | ✅ | 100% |
 | Release v1.3.0 | ✅ | 100% |
 
-**当前工作日**: Day 24
+**当前工作日**: Day 25
 **当前固件版本**: v1.3.0
-**状态**: v1.3.0 发布 — SD 卡存储 + 单元测试 + 代码重构
+**状态**: Day 25 — GitHub Actions CI/CD pipeline
 
 ---
 
@@ -285,3 +285,12 @@
 - [x] 编译验证: 0 warnings
 - [x] 单元测试: 20/20 pass
 - [x] GitHub Release v1.3.0
+
+### Day 25: GitHub Actions CI/CD Pipeline
+- [x] CI 工作流: `.github/workflows/ci.yml`
+  - [x] Unit Tests job: 下载 Unity → cmake → ctest (ubuntu-latest)
+  - [x] ESP-IDF Build job: espressif/idf:v5.5.1 容器构建
+  - [x] 固件产物上传 (30 天保留)
+- [x] 测试 CMakeLists.txt 改进: UNITY_DIR 可配置 (支持 CI/本地/ESP-IDF)
+- [x] README 双语添加 CI status badge
+- [x] 推送验证 CI 运行

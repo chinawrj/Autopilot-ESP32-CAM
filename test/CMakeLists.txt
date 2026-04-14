@@ -4,8 +4,16 @@ project(autopilot_esp32cam_tests C)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -g")
 
-# Unity test framework (from ESP-IDF)
-set(UNITY_DIR $ENV{HOME}/esp/esp-idf/components/unity/unity/src)
+# Unity test framework — prefer UNITY_DIR env/cmake var, fallback to ESP-IDF
+if(NOT DEFINED UNITY_DIR)
+    if(DEFINED ENV{UNITY_DIR})
+        set(UNITY_DIR $ENV{UNITY_DIR})
+    elseif(DEFINED ENV{IDF_PATH})
+        set(UNITY_DIR $ENV{IDF_PATH}/components/unity/unity/src)
+    else()
+        set(UNITY_DIR $ENV{HOME}/esp/esp-idf/components/unity/unity/src)
+    endif()
+endif()
 
 add_library(unity STATIC ${UNITY_DIR}/unity.c)
 target_include_directories(unity PUBLIC ${UNITY_DIR})

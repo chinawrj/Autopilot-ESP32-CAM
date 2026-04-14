@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Unity test framework
+        run: |
+          git clone --depth 1 https://github.com/ThrowTheSwitch/Unity.git /tmp/unity
+
+      - name: Build & run tests
+        working-directory: test
+        env:
+          UNITY_DIR: /tmp/unity/src
+        run: |
+          mkdir -p build && cd build
+          cmake ..
+          make -j$(nproc)
+          ctest --output-on-failure
+
+  build:
+    name: ESP-IDF Build
+    runs-on: ubuntu-latest
+    container: espressif/idf:v5.5.1
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build firmware
+        shell: bash
+        run: |
+          . $IDF_PATH/export.sh
+          idf.py build
+
+      - name: Report binary size
+        run: |
+          stat --printf="Firmware size: %s bytes\n" build/autopilot-esp32cam.bin
+
+      - name: Upload firmware artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-${{ github.sha }}
+          path: |
+            build/autopilot-esp32cam.bin
+            build/bootloader/bootloader.bin
+            build/partition_table/partition-table.bin
+          retention-days: 30
