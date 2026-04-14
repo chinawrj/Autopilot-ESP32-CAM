@@ -154,9 +154,9 @@
 | Release v1.3.0 | ✅ | 100% |
 | Release v1.4.0 | ✅ | 100% |
 
-**当前工作日**: Day 29
+**当前工作日**: Day 30
 **当前固件版本**: v1.4.0
-**状态**: Day 29 — v1.4.0 Release (安全强化 + 系统诊断 + UI 增强)
+**状态**: Day 30 — JS 提取 + API 速率限制 (代码健康 + 安全加固)
 
 ---
 
@@ -351,3 +351,14 @@
   - [x] Flash + Serial: OK, version 1.4.0
   - [x] Browser (Patchright): 18/18 pass
   - [x] Unit Tests: 43/43 pass (4 suites)
+
+### Day 30: JS 提取 + API Rate Limiting
+- [x] JavaScript 提取: index.html 299→132 行 (-56%), 创建 app.js (166 行)
+- [x] Rate Limiter: token bucket 限流 (OTA 3/60s, SD delete 10/60s)
+- [x] 单元测试: rate_limiter 套件 7 个测试
+- [x] 浏览器测试新增 7 个 (app.js + 面板填充), 总计 23/23
+- [x] 全链路上板验证
+  - [x] Build: 0 warnings
+  - [x] Flash + Serial: OK
+  - [x] Browser (Patchright): 23/23 pass
+  - [x] Unit Tests: 50/50 pass (5 suites)

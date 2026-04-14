@@ -11,8 +11,11 @@
 #include "http_helpers.h"
 #include "path_utils.h"
 #include "sd_file_ops.h"
+#include "rate_limiter.h"
 
 static const char *TAG = "sd_http";
+
+static rate_limiter_t rl_sd_delete = RATE_LIMITER_INIT(10, 60); /* 10 deletes per 60s */
 
 static esp_err_t sd_status_handler(httpd_req_t *req)
 {
@@ -92,6 +95,12 @@ static esp_err_t sd_list_handler(httpd_req_t *req)
 
 static esp_err_t sd_delete_handler(httpd_req_t *req)
 {
+    if (!rate_limiter_allow(&rl_sd_delete)) {
+        httpd_resp_set_status(req, "429 Too Many Requests");
+        httpd_resp_set_type(req, "text/plain");
+        httpd_resp_sendstr(req, "Rate limited - try again later");
+        return ESP_FAIL;
+    }
     if (!sd_card_is_mounted()) {
         cJSON *root = cJSON_CreateObject();
         cJSON_AddBoolToObject(root, "ok", false);

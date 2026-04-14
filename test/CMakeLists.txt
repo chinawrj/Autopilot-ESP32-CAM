@@ -74,4 +74,17 @@ target_include_directories(test_path_utils PRIVATE
 target_link_libraries(test_path_utils unity)
 add_test(NAME path_utils COMMAND test_path_utils)
 
+# === rate_limiter tests ===
+add_executable(test_rate_limiter
+    unit/test_rate_limiter.c
+    ${PROJ_ROOT}/main/rate_limiter.c
+    mocks/mock_esp.c
+)
+target_include_directories(test_rate_limiter PRIVATE
+    ${PROJ_ROOT}/main
+    mocks
+)
+target_link_libraries(test_rate_limiter unity)
+add_test(NAME rate_limiter COMMAND test_rate_limiter)
+
 enable_testing()

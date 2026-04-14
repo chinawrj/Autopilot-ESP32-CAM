@@ -13,6 +13,7 @@ idf_component_register(
          "path_utils.c"
          "stream_server.c"
          "system_info.c"
+         "rate_limiter.c"
     INCLUDE_DIRS "."
     PRIV_REQUIRES esp_https_ota app_update
                   esp_netif esp_wifi esp_http_server esp_timer
@@ -20,4 +21,5 @@ idf_component_register(
                   fps_counter sd_card
     EMBED_FILES "index.html"
                 "stream_ws.html"
+                "app.js"
 )

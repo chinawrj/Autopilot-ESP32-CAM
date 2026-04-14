@@ -18,14 +18,21 @@
 #include "sd_handlers.h"
 #include "camera_handlers.h"
 #include "system_info.h"
+#include "rate_limiter.h"
 
 static const char *TAG = "httpd";
+
+/* Rate limiters for destructive endpoints */
+static rate_limiter_t rl_ota = RATE_LIMITER_INIT(3, 60);    /* 3 OTA attempts per 60s */
 
 extern const char index_html_start[] asm("_binary_index_html_start");
 extern const char index_html_end[]   asm("_binary_index_html_end");
 
 extern const char stream_ws_html_start[] asm("_binary_stream_ws_html_start");
 extern const char stream_ws_html_end[]   asm("_binary_stream_ws_html_end");
+
+extern const char app_js_start[] asm("_binary_app_js_start");
+extern const char app_js_end[]   asm("_binary_app_js_end");
 
 static esp_err_t index_handler(httpd_req_t *req)
 {
@@ -35,6 +42,13 @@ static esp_err_t index_handler(httpd_req_t *req)
 static esp_err_t stream_ws_page_handler(httpd_req_t *req)
 {
     return http_send_html(req, stream_ws_html_start, stream_ws_html_end - stream_ws_html_start);
+}
+
+static esp_err_t app_js_handler(httpd_req_t *req)
+{
+    httpd_resp_set_type(req, "application/javascript");
+    httpd_resp_set_hdr(req, "Cache-Control", "public, max-age=3600");
+    return httpd_resp_send(req, app_js_start, app_js_end - app_js_start);
 }
 
 static void httpd_close_fn(httpd_handle_t hd, int fd)
@@ -117,6 +131,12 @@ static esp_err_t debug_wifi_disconnect_handler(httpd_req_t *req)
 
 static esp_err_t ota_handler(httpd_req_t *req)
 {
+    if (!rate_limiter_allow(&rl_ota)) {
+        httpd_resp_set_status(req, "429 Too Many Requests");
+        httpd_resp_set_type(req, "text/plain");
+        httpd_resp_sendstr(req, "Rate limited - try again later");
+        return ESP_FAIL;
+    }
     char buf[256];
     int ret = httpd_req_recv(req, buf, sizeof(buf) - 1);
     if (ret <= 0) {
@@ -183,6 +203,8 @@ esp_err_t http_server_start(void)
 
     httpd_register_uri_handler(server, &(httpd_uri_t){
         .uri = "/", .method = HTTP_GET, .handler = index_handler});
+    httpd_register_uri_handler(server, &(httpd_uri_t){
+        .uri = "/app.js", .method = HTTP_GET, .handler = app_js_handler});
     httpd_register_uri_handler(server, &(httpd_uri_t){
         .uri = "/api/status", .method = HTTP_GET, .handler = status_handler});
     httpd_register_uri_handler(server, &(httpd_uri_t){

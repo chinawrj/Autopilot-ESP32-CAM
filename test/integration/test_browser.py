@@ -56,6 +56,8 @@ class TestRunner:
 
 
 def run_tests(device_url, headless=False):
+    if not device_url.startswith("http"):
+        device_url = f"http://{device_url}"
     t = TestRunner()
 
     with sync_playwright() as p:
@@ -72,6 +74,32 @@ def run_tests(device_url, headless=False):
         title = page.title()
         t.test("Homepage loads", "ESP32" in title or "Autopilot" in title, title)
         time.sleep(0.5)
+
+        # --- app.js external script ---
+        js_resp = page.evaluate(
+            """async () => {
+            const r = await fetch('/app.js');
+            const ct = r.headers.get('Content-Type');
+            const body = await r.text();
+            return {status: r.status, ct: ct, len: body.length, hasSwitch: body.includes('switchMode')};
+        }"""
+        )
+        t.test("app.js served", js_resp.get("status") == 200 and js_resp.get("len") > 1000)
+        t.test("app.js content-type", "javascript" in (js_resp.get("ct") or ""))
+        t.test("app.js has functions", js_resp.get("hasSwitch") is True)
+        time.sleep(0.3)
+
+        # --- Homepage System Info panel (populated after JS fetch) ---
+        time.sleep(2)
+        chip_text = page.inner_text("#si-chip")
+        t.test("Panel: chip populated", "ESP32" in chip_text, chip_text)
+        idf_text = page.inner_text("#si-idf")
+        t.test("Panel: IDF populated", "v5." in idf_text, idf_text)
+        psram_text = page.inner_text("#si-psram")
+        t.test("Panel: PSRAM populated", "KB" in psram_text, psram_text)
+        tasks_text = page.inner_text("#si-tasks")
+        t.test("Panel: tasks populated", tasks_text.isdigit() and int(tasks_text) > 5, tasks_text)
+        time.sleep(0.3)
 
         # --- Status API ---
         page.goto(f"{device_url}/api/status", timeout=5000)
