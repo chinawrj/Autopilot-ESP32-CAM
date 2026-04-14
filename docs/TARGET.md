@@ -403,3 +403,11 @@
   - [x] 版本确认: /api/status → version: 2.0.0
   - [x] 烧录后回归: 39/39 browser tests ✅
 - [x] Git tag v2.0.0 + push
+
+### Day 34 — Public Release Day 🚀
+
+- [x] 硬件验证: v2.0.0 在线, 串口启动日志确认
+- [x] Release 截图: 4 张 (homepage, WS stream, system info, mobile)
+- [x] GitHub Release: v2.0.0 发布, 包含固件 + 截图
+  - URL: https://github.com/chinawrj/Autopilot-ESP32-CAM/releases/tag/v2.0.0
+- [x] 每日日志 + commit + push
