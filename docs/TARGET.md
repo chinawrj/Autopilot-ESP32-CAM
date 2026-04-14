@@ -151,10 +151,11 @@
 | M6 v1.1.0 新功能 | ✅ | 100% |
 | Release v1.1.1 | ✅ | 100% |
 | Release v1.2.0 | ✅ | 100% |
+| Release v1.3.0 | ✅ | 100% |
 
-**当前工作日**: Day 23
-**当前固件版本**: v1.2.0
-**状态**: Day 23 — SD 卡支持 Phase 1 完成，准备 v1.3.0
+**当前工作日**: Day 24
+**当前固件版本**: v1.3.0
+**状态**: v1.3.0 发布 — SD 卡存储 + 单元测试 + 代码重构
 
 ---
 
@@ -268,3 +269,19 @@
 - [x] 前端 SD Card Storage 面板
 - [x] 上板验证: build 0 warnings, flash, serial, Patchright 8/8
 - [x] 单元测试回归: 20/20 pass
+
+### Day 24: v1.3.0 发布准备
+- [x] 版本号升级: 1.2.0 → 1.3.0
+- [x] CHANGELOG.md: v1.3.0 条目 (SD 卡 + 重构 + 单元测试)
+- [x] RELEASE_NOTES.md: 更新为 v1.3.0
+- [x] README.md / README_CN.md 全面更新
+  - [x] 功能表: 增加 SD 卡存储、单元测试
+  - [x] 架构图: 增加 sd_card 模块 + Micro SD 卡硬件
+  - [x] API 参考: 增加 6 个 SD 卡端点
+  - [x] 项目结构: 增加 sd_handlers、http_helpers、fps_counter、sd_card、test/
+  - [x] 性能指标: ~1600 行/13 源文件、20 单元测试
+  - [x] 里程碑时间线: 增加 Day 22 重构、v1.3.0
+- [x] TARGET.md 更新
+- [x] 编译验证: 0 warnings
+- [x] 单元测试: 20/20 pass
+- [x] GitHub Release v1.3.0

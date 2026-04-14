@@ -32,6 +32,8 @@
 | **WiFi 自动重连** | 断线后指数退避无限重连 (1s → 10s) |
 | **mDNS 发现** | 通过 `http://espcam.local/` 访问设备 — 无需记住 IP 地址 |
 | **摄像头设置** | 实时调节摄像头参数（亮度、对比度、饱和度、镜像、翻转）via `/api/camera` |
+| **SD 卡存储** | Micro SD 卡支持：拍照存 SD 卡、浏览/下载/删除文件 via `/api/sd/*` |
+| **单元测试** | 20 个基于主机的单元测试（fps_counter、virtual_sensor、led_controller），Unity 框架 |
 | **堆内存监控** | `/api/status` 返回实时堆内存、RSSI、运行时间信息，每 30s 串口日志输出 |
 
 ## 硬件参数
@@ -95,6 +97,7 @@ graph TB
             B6["WS /ws/stream"]
             B7["GET /api/snapshot"]
             B8["POST /api/ota"]
+            B9["SD /api/sd/*"]
         end
 
         subgraph HTTP8081["视频流服务器 :8081 (MJPEG)"]
@@ -108,6 +111,7 @@ graph TB
             C4["led_controller<br/>LED 控制"]
             C5["virtual_sensor<br/>虚拟传感器"]
             C6["ota_update<br/>OTA 升级"]
+            C7["sd_card<br/>SD 卡驱动"]
         end
 
         subgraph HW["硬件层"]
@@ -116,17 +120,19 @@ graph TB
             D4["GPIO33 LED"]
             D5["WiFi 射频"]
             D6["双 OTA Flash"]
+            D7["Micro SD 卡"]
         end
     end
 
     A1 -- "HTTP :8081" --> B2
     A1 -- "WebSocket" --> B6
-    A1 -- "fetch" --> B4 & B7
+    A1 -- "fetch" --> B4 & B7 & B9
     A1 -- "POST" --> B5 & B8
 
     B2 --> C2
     B6 --> C3 --> C2
     B7 --> C2
+    B9 --> C7 --> D7
     B4 --> C5
     B5 --> C4
     B8 --> C6
@@ -193,6 +199,9 @@ I (2630) main: System ready — http://192.168.1.171/
 | 快照 | `http://<IP>/api/snapshot` | 单帧 JPEG 图像捕获 |
 | OTA 升级 | `POST http://<IP>/api/ota` | Body: `{"url":"http://..."}` |
 | OTA 状态 | `http://<IP>/api/ota/status` | OTA 进度和状态 |
+| SD 卡状态 | `http://<IP>/api/sd/status` | SD 卡挂载状态 + 容量 |
+| SD 文件列表 | `http://<IP>/api/sd/list` | 列出 SD 卡文件 |
+| SD 拍照 | `POST http://<IP>/api/sd/capture` | 拍照保存到 SD 卡 |
 
 ## Web 界面
 
@@ -219,7 +228,7 @@ I (2630) main: System ready — http://192.168.1.171/
   "rssi": -45,
   "uptime": 3600,
   "wifi_connected": true,
-  "version": "1.1.1"
+  "version": "1.3.0"
 }
 ```
 
@@ -292,6 +301,41 @@ curl -X POST http://192.168.1.171/api/camera -d '{"brightness":1,"vflip":true}'
 {"status": "idle", "progress": 0, "message": ""}
 ```
 
+### GET `/api/sd/status`
+
+```json
+{"mounted": true, "name": "SD32G", "total_bytes": 31914983424, "free_bytes": 31903055872}
+```
+
+### GET `/api/sd/list`
+
+```json
+{"files": [{"name": "img_001.jpg", "size": 12345}]}
+```
+
+### POST `/api/sd/capture`
+
+拍摄 JPEG 快照并保存到 SD 卡。
+
+```bash
+curl -X POST http://192.168.1.171/api/sd/capture
+# 返回: {"filename": "img_001.jpg", "size": 12345}
+```
+
+### GET `/api/sd/file/{filename}`
+
+从 SD 卡下载文件（`.jpg` 文件返回 `Content-Type: image/jpeg`）。
+
+```bash
+curl -o photo.jpg http://192.168.1.171/api/sd/file/img_001.jpg
+```
+
+### POST `/api/sd/delete`
+
+```bash
+curl -X POST http://192.168.1.171/api/sd/delete -d '{"filename":"img_001.jpg"}'
+```
+
 ## 性能指标
 
 | 指标 | 值 |
@@ -301,10 +345,11 @@ curl -X POST http://192.168.1.171/api/camera -d '{"brightness":1,"vflip":true}'
 | 多客户端 | 3 WS + 1 MJPEG 同时运行，0 错误 |
 | JPEG 帧大小 | ~10-15 KB (VGA, q=12) |
 | 空闲堆内存 | ~4.2 MB (含 PSRAM) |
-| 固件大小 | ~1.0 MB (双 OTA 分区) |
+| 固件大小 | ~1.2 MB (双 OTA 分区) |
 | 分区布局 | 双 OTA (3MB × 2) + 1.97MB SPIFFS |
 | WiFi 重连 | 自动，1-10s 指数退避 |
-| C 代码总量 | ~1300 行，9 个源文件 |
+| C 代码总量 | ~1600 行，13 个源文件 |
+| 单元测试 | 20/20（3 个测试套件，基于主机运行） |
 
 ## 项目结构
 
@@ -314,14 +359,22 @@ curl -X POST http://192.168.1.171/api/camera -d '{"brightness":1,"vflip":true}'
 │   ├── wifi_manager.c/h    # WiFi STA 管理，自动重连
 │   ├── camera_init.c/h     # OV2640 摄像头初始化 + I2C 恢复
 │   ├── http_server.c/h     # HTTP 服务器 :80，API 路由，WebSocket 升级
+│   ├── http_helpers.c/h    # JSON 响应辅助函数 (http_send_json)
 │   ├── stream_server.c/h   # 独立 MJPEG 视频流服务器 :8081
 │   ├── ws_stream.c/h       # WebSocket 视频流 + 控制消息
 │   ├── ota_update.c/h      # OTA 固件升级，支持回滚保护
 │   ├── led_controller.c/h  # GPIO33 LED 驱动
+│   ├── sd_handlers.c/h     # SD 卡 REST API 处理器（5 个端点）
 │   ├── index.html          # 统一仪表盘（TCP/WS 标签 + 所有控制）
 │   └── stream_ws.html      # WebSocket 视频流独立页面
 ├── components/
-│   └── virtual_sensor/     # 虚拟温度传感器组件
+│   ├── virtual_sensor/     # 虚拟温度传感器组件
+│   ├── fps_counter/        # 可复用 FPS 计算组件
+│   └── sd_card/            # SD 卡驱动（1-bit SDMMC + VFS FAT）
+├── test/
+│   ├── unit/               # 单元测试（fps_counter、virtual_sensor、led_controller）
+│   ├── mocks/              # ESP-IDF mock 层，用于主机测试
+│   └── CMakeLists.txt      # 主机编译: cmake && make && ctest
 ├── tools/
 │   ├── provision-wifi.sh       # WiFi 凭据安全注入
 │   ├── quality_audit.py        # API 测试套件 (80 项)
@@ -336,7 +389,7 @@ curl -X POST http://192.168.1.171/api/camera -d '{"brightness":1,"vflip":true}'
 ├── docs/
 │   ├── TARGET.md           # 里程碑进度跟踪
 │   ├── images/             # 文档截图
-│   └── daily-logs/         # 每日开发日志 (Day 000–020)
+│   └── daily-logs/         # 每日开发日志 (Day 001–024)
 ├── CHANGELOG.md            # 版本变更记录
 ├── sdkconfig.defaults      # ESP-IDF 默认配置
 ├── partitions.csv          # 分区表（双 OTA 3MB×2 + 1.97MB SPIFFS）
@@ -374,6 +427,8 @@ curl -X POST http://192.168.1.171/api/camera -d '{"brightness":1,"vflip":true}'
 | 质量审计 | Day 19 | 130/130 测试通过，端口 81→8081 修复 |
 | Release v1.1.1 | Day 20 | 文档刷新 + 补丁发布 |
 | Release v1.2.0 | Day 21 | mDNS 发现 + 摄像头设置 API |
+| 代码重构 | Day 22 | FPS 组件 + JSON 辅助函数 + 20 个单元测试 |
+| Release v1.3.0 | Day 23 | SD 卡存储 + 单元测试框架 |
 
 每次代码变更都经过完整的 编译 → 烧录 → 串口验证 → 浏览器验证 循环。详细日志见 [docs/daily-logs/](docs/daily-logs/)。
 

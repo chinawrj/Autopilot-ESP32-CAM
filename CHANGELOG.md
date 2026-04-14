@@ -2,6 +2,51 @@
 
 All notable changes to Autopilot ESP32-CAM are documented in this file.
 
+## [v1.3.0] — 2026-04-14
+
+### ✨ New Features
+
+- **SD Card Storage** — Micro SD card support with 1-bit SDMMC mode for photo capture and file management
+  - Auto-detect and mount on boot; graceful degradation when no card is inserted
+  - Capture JPEG snapshots directly to SD card (`POST /api/sd/capture`)
+  - Browse files via REST API (`GET /api/sd/list`) or web UI panel
+  - Download (`GET /api/sd/file/*`) and delete (`POST /api/sd/delete`) files
+  - Card status with capacity info (`GET /api/sd/status`)
+  - Web UI: Collapsible "SD Card Storage" panel with capture button, file list, and delete
+  - Uses GPIO2 (DATA0), GPIO14 (CLK), GPIO15 (CMD) — avoids GPIO4/12 conflicts
+
+### 🏗️ Code Quality
+
+- **FPS Counter Component** — Extracted reusable `components/fps_counter/` from stream modules
+  - Pure struct API (no globals), easy to unit test
+  - Removed duplicate FPS logic from `stream_server.c` and `ws_stream.c`
+- **JSON Response Helper** — `http_helpers.c/h` with `http_send_json()` reducing 5 repetitive patterns in `http_server.c`
+- **Host-based Unit Tests** — 20 tests across 3 suites using Unity framework
+  - `test_fps_counter` (7 tests): window behavior, high framerate, reset
+  - `test_virtual_sensor` (6 tests): temperature range, random mapping
+  - `test_led_controller` (7 tests): GPIO mock, toggle, idempotency
+  - Runs on host (Mac/Linux) without ESP32 hardware via `cmake && make && ctest`
+- **FATFS Long Filename Support** — `CONFIG_FATFS_LFN_HEAP=y` for SD card file names > 8.3
+
+### 🔧 Technical
+
+- New component: `components/sd_card/` (1-bit SDMMC, VFS FAT mount)
+- New component: `components/fps_counter/` (portable FPS calculation)
+- New module: `main/sd_handlers.c/h` (5 HTTP handlers for SD card operations)
+- New module: `main/http_helpers.c/h` (JSON response helper)
+- `max_uri_handlers` bumped from 16 to 20 for SD card routes
+- URI wildcard matching (`httpd_uri_match_wildcard`) for `/api/sd/file/*`
+- Test infrastructure: `test/` directory with Unity, mocks, and 3 test suites
+
+### 📊 Stats
+
+- Total C code: ~1600 lines across 13 source files
+- Unit tests: 20/20 (3 suites)
+- Compile warnings: 0
+- Firmware binary: ~1.2 MB (59% partition free)
+
+---
+
 ## [v1.2.0] — 2026-04-13
 
 ### ✨ New Features
