@@ -75,6 +75,10 @@ static esp_err_t snapshot_handler(httpd_req_t *req)
 static esp_err_t status_handler(httpd_req_t *req)
 {
     cJSON *root = cJSON_CreateObject();
+    if (!root) {
+        httpd_resp_send_500(req);
+        return ESP_ERR_NO_MEM;
+    }
     cJSON_AddNumberToObject(root, "fps", stream_server_get_fps());
     cJSON_AddNumberToObject(root, "temperature", virtual_sensor_get_temperature());
     cJSON_AddBoolToObject(root, "led_state", led_get_state());

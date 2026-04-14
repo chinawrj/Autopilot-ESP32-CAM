@@ -6,6 +6,7 @@
 #include "esp_timer.h"
 #include "esp_idf_version.h"
 #include "esp_heap_caps.h"
+#include "esp_task_wdt.h"
 #include "esp_log.h"
 #include "cJSON.h"
 #include "http_helpers.h"
@@ -18,6 +19,10 @@ static const char *TAG = "system_info";
 static esp_err_t system_info_handler(httpd_req_t *req)
 {
     cJSON *root = cJSON_CreateObject();
+    if (!root) {
+        httpd_resp_send_500(req);
+        return ESP_ERR_NO_MEM;
+    }
 
     /* Chip info */
     esp_chip_info_t chip;
@@ -59,6 +64,14 @@ static esp_err_t system_info_handler(httpd_req_t *req)
     /* Streaming */
     cJSON_AddNumberToObject(root, "ws_fps", ws_stream_get_fps());
     cJSON_AddNumberToObject(root, "mjpeg_fps", stream_server_get_fps());
+
+    /* Health / watchdog */
+    cJSON *health = cJSON_AddObjectToObject(root, "health");
+    cJSON_AddBoolToObject(health, "heap_ok", heap_caps_check_integrity_all(false));
+    cJSON_AddNumberToObject(health, "wdt_timeout_s", CONFIG_ESP_TASK_WDT_TIMEOUT_S);
+    size_t internal_free = heap_caps_get_free_size(MALLOC_CAP_INTERNAL);
+    cJSON_AddNumberToObject(health, "internal_free", internal_free);
+    cJSON_AddBoolToObject(health, "memory_ok", internal_free >= 20000);
 
     ESP_LOGD(TAG, "System info requested");
     return http_send_json(req, root);

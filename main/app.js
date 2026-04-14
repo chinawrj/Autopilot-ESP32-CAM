@@ -1,8 +1,9 @@
 var mode='tcp', ws=null, ledState=false;
 var wsFc=0, wsLastT=Date.now(), wsFps=0;
-var canvas=document.getElementById('ws-canvas'), ctx=canvas.getContext('2d');
+var canvas=document.getElementById('ws-canvas'), ctx=canvas?canvas.getContext('2d'):null;
 var streamUrl='http://'+location.hostname+':8081/stream/tcp';
-document.getElementById('tcp-view').src=streamUrl;
+/* Defer stream load to avoid overloading ESP32 connections on page load */
+setTimeout(function(){document.getElementById('tcp-view').src=streamUrl;},500);
 
 function switchMode(m) {
     mode = m;

@@ -3,6 +3,8 @@
 #include "esp_log.h"
 #include "esp_system.h"
 #include "esp_netif.h"
+#include "esp_heap_caps.h"
+#include "esp_task_wdt.h"
 #include "mdns.h"
 #include "wifi_manager.h"
 #include "camera_init.h"
@@ -13,6 +15,8 @@
 #include "ota_update.h"
 #include "stream_server.h"
 #include "sd_card.h"
+
+#define HEAP_WARN_THRESHOLD  20000  /* Warn when internal free heap < 20KB */
 
 static const char *TAG = "main";
 
@@ -96,16 +100,38 @@ void app_main(void)
 
     ESP_LOGI(TAG, "System ready — http://%s/", wifi_manager_get_ip());
 
-    /* Main loop — periodic heap logging for M5 stability monitoring */
-    int heap_log_counter = 0;
+    /* Subscribe main task to task watchdog (auto-reboot on hang) */
+    esp_task_wdt_add(NULL);
+    ESP_LOGI(TAG, "Task watchdog subscribed (timeout=%ds)", CONFIG_ESP_TASK_WDT_TIMEOUT_S);
+
+    /* Main loop — watchdog feed + heap monitoring */
+    int loop_counter = 0;
+    bool heap_warned = false;
     while (1) {
         vTaskDelay(pdMS_TO_TICKS(1000));
-        heap_log_counter++;
-        if (heap_log_counter % 30 == 0) {
-            ESP_LOGI(TAG, "heap free=%lu min=%lu uptime=%ds",
-                     (unsigned long)esp_get_free_heap_size(),
-                     (unsigned long)esp_get_minimum_free_heap_size(),
-                     heap_log_counter);
+        esp_task_wdt_reset();
+        loop_counter++;
+
+        /* Periodic heap logging (every 30s) */
+        if (loop_counter % 30 == 0) {
+            size_t free_heap = esp_get_free_heap_size();
+            size_t min_heap = esp_get_minimum_free_heap_size();
+            ESP_LOGI(TAG, "heap free=%u min=%u uptime=%ds",
+                     (unsigned)free_heap, (unsigned)min_heap, loop_counter);
+
+            /* Heap integrity check */
+            if (!heap_caps_check_integrity_all(true)) {
+                ESP_LOGE(TAG, "HEAP CORRUPTION DETECTED!");
+            }
+
+            /* Low memory warning */
+            if (free_heap < HEAP_WARN_THRESHOLD && !heap_warned) {
+                ESP_LOGW(TAG, "LOW MEMORY: free=%u (threshold=%d)",
+                         (unsigned)free_heap, HEAP_WARN_THRESHOLD);
+                heap_warned = true;
+            } else if (free_heap >= HEAP_WARN_THRESHOLD) {
+                heap_warned = false;
+            }
         }
     }
 }

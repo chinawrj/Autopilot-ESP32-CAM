@@ -90,7 +90,17 @@ def run_tests(device_url, headless=False):
         time.sleep(0.3)
 
         # --- Homepage System Info panel (populated after JS fetch) ---
-        time.sleep(2)
+        try:
+            page.wait_for_function(
+                """() => {
+                    const el = document.getElementById('si-chip');
+                    return el && el.textContent && el.textContent !== '--';
+                }""",
+                timeout=15000,
+            )
+            panel_ready = True
+        except Exception:
+            panel_ready = False
         chip_text = page.inner_text("#si-chip")
         t.test("Panel: chip populated", "ESP32" in chip_text, chip_text)
         idf_text = page.inner_text("#si-idf")
@@ -124,6 +134,11 @@ def run_tests(device_url, headless=False):
             f"{info.get('task_count')} tasks",
         )
         t.test("System info - WiFi", info.get("wifi_connected") is True)
+        health = info.get("health", {})
+        t.test("Health - heap OK", health.get("heap_ok") is True)
+        t.test("Health - memory OK", health.get("memory_ok") is True)
+        t.test("Health - watchdog", health.get("wdt_timeout_s", 0) >= 10,
+               f"{health.get('wdt_timeout_s')}s")
         time.sleep(0.3)
 
         # --- Security headers ---

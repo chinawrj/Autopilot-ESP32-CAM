@@ -362,3 +362,15 @@
   - [x] Flash + Serial: OK
   - [x] Browser (Patchright): 23/23 pass
   - [x] Unit Tests: 50/50 pass (5 suites)
+
+### Day 31: 稳定性加固 (发布冲刺 1/3)
+- [x] Task Watchdog: 30s 超时, panic 模式自动重启
+- [x] 堆完整性监控: 30s 周期检查 + 低内存警告
+- [x] 健康 API: /api/system/info 新增 health 段 (heap_ok, memory_ok, wdt)
+- [x] 错误处理: cJSON OOM 保护 (http_send_json, status, system_info)
+- [x] app.js 可靠性: 延迟 MJPEG 加载, 防连接过载
+- [x] 全链路上板验证
+  - [x] Build: 0 warnings
+  - [x] Flash × 3 cycles: OK
+  - [x] Browser (Patchright): 26/26 pass
+  - [x] Unit Tests: 50/50 pass (5 suites)
