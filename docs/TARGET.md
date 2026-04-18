@@ -411,3 +411,11 @@ supporting dual-path TCP/UDP video streaming, real-time HUD overlay, and LED con
 - [x] GitHub Release: v2.0.0 published, includes firmware + screenshots
   - URL: https://github.com/chinawrj/Autopilot-ESP32-CAM/releases/tag/v2.0.0
 - [x] Daily log + commit + push
+
+### Day 35 — English-Only Internationalization
+
+- [x] Full i18n: 67 files translated Chinese → English
+- [x] Categories: source, docs, daily logs, skills, agent config, tools
+- [x] Verification: 0 Chinese chars outside README_CN.md
+- [x] Build: 0 warnings, unit tests 50/50
+- [x] Device: v2.0.0 online, healthy
