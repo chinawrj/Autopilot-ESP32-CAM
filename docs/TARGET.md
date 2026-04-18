@@ -419,3 +419,11 @@ supporting dual-path TCP/UDP video streaming, real-time HUD overlay, and LED con
 - [x] Verification: 0 Chinese chars outside README_CN.md
 - [x] Build: 0 warnings, unit tests 50/50
 - [x] Device: v2.0.0 online, healthy
+
+### Day 36 — Refactoring Day
+
+- [x] Refactored 7 functions across 6 files (pure structural, no logic changes)
+- [x] Long functions: 13 → 10 (biggest: app_main 93→8, camera_init 88→44)
+- [x] Eliminated code duplication in ws_stream client removal
+- [x] Source lines: 1971 → 1672
+- [x] Build: 0 warnings, unit tests 50/50, browser tests 37/39

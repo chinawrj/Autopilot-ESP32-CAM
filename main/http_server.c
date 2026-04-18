@@ -187,24 +187,8 @@ static esp_err_t ota_status_handler(httpd_req_t *req)
     return http_send_json(req, root);
 }
 
-esp_err_t http_server_start(void)
+static void register_core_handlers(httpd_handle_t server)
 {
-    /* Main server on port 80 — APIs, pages, WebSocket */
-    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-    config.max_uri_handlers = 20;
-    config.stack_size = 8192;
-    config.server_port = 80;
-    config.close_fn = httpd_close_fn;
-    config.lru_purge_enable = true;
-    config.uri_match_fn = httpd_uri_match_wildcard;
-
-    httpd_handle_t server = NULL;
-    esp_err_t err = httpd_start(&server, &config);
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to start HTTP server: 0x%x", err);
-        return err;
-    }
-
     httpd_register_uri_handler(server, &(httpd_uri_t){
         .uri = "/", .method = HTTP_GET, .handler = index_handler});
     httpd_register_uri_handler(server, &(httpd_uri_t){
@@ -227,13 +211,28 @@ esp_err_t http_server_start(void)
         .uri = "/api/ota", .method = HTTP_POST, .handler = ota_handler});
     httpd_register_uri_handler(server, &(httpd_uri_t){
         .uri = "/api/ota/status", .method = HTTP_GET, .handler = ota_status_handler});
-    /* Camera settings APIs (registered from camera_handlers.c) */
+}
+
+esp_err_t http_server_start(void)
+{
+    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+    config.max_uri_handlers = 20;
+    config.stack_size = 8192;
+    config.server_port = 80;
+    config.close_fn = httpd_close_fn;
+    config.lru_purge_enable = true;
+    config.uri_match_fn = httpd_uri_match_wildcard;
+
+    httpd_handle_t server = NULL;
+    esp_err_t err = httpd_start(&server, &config);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to start HTTP server: 0x%x", err);
+        return err;
+    }
+
+    register_core_handlers(server);
     camera_handlers_register(server);
-
-    /* SD card APIs (registered from sd_handlers.c) */
     sd_handlers_register(server);
-
-    /* System diagnostics (registered from system_info.c) */
     system_info_register(server);
 
     ESP_LOGI(TAG, "HTTP server started on port %d", config.server_port);

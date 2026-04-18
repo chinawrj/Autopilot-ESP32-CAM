@@ -40,71 +40,51 @@ static void mdns_init_service(void)
     ESP_LOGI(TAG, "mDNS started: http://espcam.local/");
 }
 
-void app_main(void)
+/* Initialize all subsystems. Returns ESP_OK only if all critical inits succeed. */
+static esp_err_t init_subsystems(void)
 {
-    ESP_LOGI(TAG, "=== Autopilot ESP32-CAM ===");
-    ESP_LOGI(TAG, "Firmware version: %s", ota_get_version());
-
-    /* Initialize WiFi and connect */
     esp_err_t ret = wifi_manager_init();
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "WiFi initialization failed");
-        return;
+        return ret;
     }
     ESP_LOGI(TAG, "WiFi connected. IP: %s", wifi_manager_get_ip());
 
-    /* Initialize mDNS for espcam.local discovery */
     mdns_init_service();
 
-    /* Initialize camera */
     ret = camera_init();
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Camera initialization failed");
-        return;
-    }
+    if (ret != ESP_OK) { ESP_LOGE(TAG, "Camera init failed"); return ret; }
 
-    /* Initialize LED controller */
     ret = led_controller_init();
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "LED controller initialization failed");
-        return;
-    }
+    if (ret != ESP_OK) { ESP_LOGE(TAG, "LED init failed"); return ret; }
 
-    /* Initialize virtual temperature sensor */
     virtual_sensor_init();
 
-    /* Initialize SD card (non-fatal — operates without card) */
+    /* Non-fatal: system operates without SD card */
     if (sd_card_init() != ESP_OK) {
         ESP_LOGW(TAG, "SD card not available — continuing without it");
     }
 
-    /* Initialize WebSocket stream subsystem */
     ret = ws_stream_init();
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "WS stream initialization failed");
-        return;
-    }
+    if (ret != ESP_OK) { ESP_LOGE(TAG, "WS stream init failed"); return ret; }
 
-    /* Start HTTP server (port 80 — API + pages) */
     ret = http_server_start();
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "HTTP server start failed");
-        return;
-    }
+    if (ret != ESP_OK) { ESP_LOGE(TAG, "HTTP server start failed"); return ret; }
 
-    /* Start stream server (port 8081 — MJPEG) */
-    ret = stream_server_start();
-    if (ret != ESP_OK) {
+    /* Non-fatal: MJPEG stream is optional */
+    if (stream_server_start() != ESP_OK) {
         ESP_LOGW(TAG, "Stream server start failed (non-fatal)");
     }
 
-    ESP_LOGI(TAG, "System ready — http://%s/", wifi_manager_get_ip());
+    return ESP_OK;
+}
 
-    /* Subscribe main task to task watchdog (auto-reboot on hang) */
+/* Watchdog feed + periodic heap health monitoring (runs forever). */
+static void watchdog_monitor_loop(void)
+{
     esp_task_wdt_add(NULL);
     ESP_LOGI(TAG, "Task watchdog subscribed (timeout=%ds)", CONFIG_ESP_TASK_WDT_TIMEOUT_S);
 
-    /* Main loop — watchdog feed + heap monitoring */
     int loop_counter = 0;
     bool heap_warned = false;
     while (1) {
@@ -112,19 +92,16 @@ void app_main(void)
         esp_task_wdt_reset();
         loop_counter++;
 
-        /* Periodic heap logging (every 30s) */
         if (loop_counter % 30 == 0) {
             size_t free_heap = esp_get_free_heap_size();
             size_t min_heap = esp_get_minimum_free_heap_size();
             ESP_LOGI(TAG, "heap free=%u min=%u uptime=%ds",
                      (unsigned)free_heap, (unsigned)min_heap, loop_counter);
 
-            /* Heap integrity check */
             if (!heap_caps_check_integrity_all(true)) {
                 ESP_LOGE(TAG, "HEAP CORRUPTION DETECTED!");
             }
 
-            /* Low memory warning */
             if (free_heap < HEAP_WARN_THRESHOLD && !heap_warned) {
                 ESP_LOGW(TAG, "LOW MEMORY: free=%u (threshold=%d)",
                          (unsigned)free_heap, HEAP_WARN_THRESHOLD);
@@ -134,4 +111,15 @@ void app_main(void)
             }
         }
     }
+}
+
+void app_main(void)
+{
+    ESP_LOGI(TAG, "=== Autopilot ESP32-CAM ===");
+    ESP_LOGI(TAG, "Firmware version: %s", ota_get_version());
+
+    if (init_subsystems() != ESP_OK) return;
+
+    ESP_LOGI(TAG, "System ready — http://%s/", wifi_manager_get_ip());
+    watchdog_monitor_loop();
 }

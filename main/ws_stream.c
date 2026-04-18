@@ -34,6 +34,21 @@ float ws_stream_get_fps(void)
 
 static volatile bool s_hb_now = false;
 
+/* Remove a client fd from the list. Caller must NOT hold s_mutex. */
+static void remove_ws_client(int fd)
+{
+    xSemaphoreTake(s_mutex, portMAX_DELAY);
+    for (int i = 0; i < s_client_count; i++) {
+        if (s_client_fds[i] == fd) {
+            s_client_fds[i] = s_client_fds[s_client_count - 1];
+            s_client_count--;
+            ESP_LOGI(TAG, "Client fd=%d removed (total: %d)", fd, s_client_count);
+            break;
+        }
+    }
+    xSemaphoreGive(s_mutex);
+}
+
 static void handle_control(const char *msg)
 {
     cJSON *root = cJSON_Parse(msg);
@@ -128,17 +143,7 @@ static void ws_stream_task(void *pvParam)
         for (int i = 0; i < n; i++) {
             esp_err_t ret = httpd_ws_send_frame_async(s_server, fds[i], &ws_pkt);
             if (ret != ESP_OK) {
-                xSemaphoreTake(s_mutex, portMAX_DELAY);
-                for (int j = 0; j < s_client_count; j++) {
-                    if (s_client_fds[j] == fds[i]) {
-                        ESP_LOGI(TAG, "Client fd=%d send failed, removing (total: %d)",
-                                 fds[i], s_client_count - 1);
-                        s_client_fds[j] = s_client_fds[s_client_count - 1];
-                        s_client_count--;
-                        break;
-                    }
-                }
-                xSemaphoreGive(s_mutex);
+                remove_ws_client(fds[i]);
             }
         }
 
@@ -211,14 +216,5 @@ esp_err_t ws_stream_handler(httpd_req_t *req)
 void ws_stream_on_close(int fd)
 {
     if (!s_mutex) return;
-    xSemaphoreTake(s_mutex, portMAX_DELAY);
-    for (int i = 0; i < s_client_count; i++) {
-        if (s_client_fds[i] == fd) {
-            s_client_fds[i] = s_client_fds[s_client_count - 1];
-            s_client_count--;
-            ESP_LOGI(TAG, "Client fd=%d closed (total: %d)", fd, s_client_count);
-            break;
-        }
-    }
-    xSemaphoreGive(s_mutex);
+    remove_ws_client(fd);
 }
