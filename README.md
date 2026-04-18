@@ -6,7 +6,7 @@
 [![Platform](https://img.shields.io/badge/Platform-ESP32--WROVER--E-orange?logo=espressif)](https://www.espressif.com/en/products/socs/esp32)
 [![Built by](https://img.shields.io/badge/Built%20by-Claude%20Opus%204.6-blueviolet?logo=anthropic)](https://www.anthropic.com/claude)
 
-**[中文文档 →](README_CN.md)**
+**[Chinese Documentation →](README_CN.md)**
 
 A real-time camera web server built on the **YD-ESP32-CAM** (ESP32-WROVER-E-N8R8) development board. Supports dual-path video streaming (TCP MJPEG + WebSocket), real-time HUD overlay, SD card storage, OTA firmware updates, and comprehensive system diagnostics. Developed entirely by an AI Agent through daily iterations — from zero to delivery.
 

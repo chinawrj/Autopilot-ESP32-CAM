@@ -3,138 +3,138 @@ name: esp32-build-flash
 description: "ESP-IDF build and flash workflow: idf.py build, flash, monitor commands. Use when: compiling ESP32 firmware, flashing to board, checking build output."
 ---
 
-# Skill: ESP32 编译与烧录
+# Skill: ESP32 Build and Flash
 
-## 用途
+## Purpose
 
-管理 ESP-IDF 项目的编译、配置和烧录流程。
+Manage the build, configuration, and flash workflow for ESP-IDF projects.
 
-**何时使用：**
-- 需要编译 ESP-IDF 项目
-- 需要配置 menuconfig 选项
-- 需要烧录固件到 ESP32 设备
-- 需要清理构建产物重新编译
+**When to use:**
+- Need to build an ESP-IDF project
+- Need to configure menuconfig options
+- Need to flash firmware to an ESP32 device
+- Need to clean build artifacts and rebuild
 
-**何时不使用：**
-- Arduino 或 PlatformIO 项目（使用对应工具链）
-- 非 ESP32 平台
+**When not to use:**
+- Arduino or PlatformIO projects (use corresponding toolchains)
+- Non-ESP32 platforms
 
-## 前置条件
+## Prerequisites
 
-- ESP-IDF v5.x 已安装
-- 环境变量已配置：`. $HOME/esp/esp-idf/export.sh`
-- 目标芯片已确认（ESP32 / ESP32-S2 / ESP32-S3 / ESP32-C3）
+- ESP-IDF v5.x installed
+- Environment variables configured: `. $HOME/esp/esp-idf/export.sh`
+- Target chip confirmed (ESP32 / ESP32-S2 / ESP32-S3 / ESP32-C3)
 
-## 操作步骤
+## Steps
 
-### 1. 环境准备
+### 1. Environment Setup
 
 ```bash
-# 加载 ESP-IDF 环境（每个新终端都需要）
+# Load ESP-IDF environment (required for each new terminal)
 . $HOME/esp/esp-idf/export.sh
 
-# 验证环境
+# Verify environment
 idf.py --version
 ```
 
-### 2. 项目配置
+### 2. Project Configuration
 
 ```bash
-# 设置目标芯片
-idf.py set-target esp32  # 或 esp32s3 等
+# Set target chip
+idf.py set-target esp32  # or esp32s3 etc.
 
-# 打开菜单配置
+# Open menu configuration
 idf.py menuconfig
 
-# 常用配置项：
+# Common configuration options:
 # - Component config → ESP32-specific → CPU frequency (240MHz)
-# - Component config → Camera configuration (ESP-CAM 项目)
+# - Component config → Camera configuration (ESP-CAM projects)
 # - Component config → WiFi → WiFi SSID / Password
 # - Serial flasher config → Flash size (4MB)
 ```
 
-### 3. 编译
+### 3. Build
 
 ```bash
-# 完整编译
+# Full build
 idf.py build
 
-# 仅编译应用（跳过 bootloader）
+# Build app only (skip bootloader)
 idf.py app
 
-# 查看编译产物大小
+# Check build artifact sizes
 idf.py size
-idf.py size-components  # 按组件查看
+idf.py size-components  # View by component
 ```
 
-### 4. 烧录
+### 4. Flash
 
 ```bash
-# 自动检测端口并烧录
+# Auto-detect port and flash
 idf.py -p /dev/ttyUSB0 flash
 
-# 仅烧录应用分区（更快）
+# Flash app partition only (faster)
 idf.py -p /dev/ttyUSB0 app-flash
 
-# 烧录并立即监控
+# Flash and immediately monitor
 idf.py -p /dev/ttyUSB0 flash monitor
 ```
 
-### 5. 构建错误处理
+### 5. Build Error Handling
 
-| 错误类型 | 常见原因 | 解决方法 |
+| Error Type | Common Cause | Solution |
 |---------|---------|---------|
-| `undefined reference` | 缺少组件依赖 | 检查 CMakeLists.txt 的 REQUIRES |
-| `region 'iram0_0_seg' overflowed` | IRAM 溢出 | 优化代码或启用 PSRAM |
-| `No such file or directory` | 头文件路径错误 | 检查 include 路径配置 |
-| `fatal error: esp_camera.h` | 缺少 camera 组件 | 添加 esp32-camera 组件 |
+| `undefined reference` | Missing component dependency | Check REQUIRES in CMakeLists.txt |
+| `region 'iram0_0_seg' overflowed` | IRAM overflow | Optimize code or enable PSRAM |
+| `No such file or directory` | Incorrect header file path | Check include path configuration |
+| `fatal error: esp_camera.h` | Missing camera component | Add esp32-camera component |
 
-### 6. 清理与重建
+### 6. Clean and Rebuild
 
 ```bash
-# 清理构建产物
+# Clean build artifacts
 idf.py fullclean
 
-# 重新编译
+# Rebuild
 idf.py build
 ```
 
-### 7. 在 tmux 中的自动化流程
+### 7. Automated Workflow in tmux
 
 ```bash
-# 编译（在 build 窗口）
+# Build (in build window)
 tmux send-keys -t {{PROJECT_NAME}}:build '. $HOME/esp/esp-idf/export.sh && idf.py build' C-m
 
-# 等待编译完成后检查结果
-sleep 30  # 根据项目大小调整
+# Wait for build completion and check result
+sleep 30  # Adjust based on project size
 BUILD_OUTPUT=$(tmux capture-pane -t {{PROJECT_NAME}}:build -p | tail -20)
 if echo "$BUILD_OUTPUT" | grep -q "Project build complete"; then
-    echo "编译成功"
-    # 烧录
+    echo "Build succeeded"
+    # Flash
     tmux send-keys -t {{PROJECT_NAME}}:flash 'idf.py -p /dev/ttyUSB0 flash' C-m
 else
-    echo "编译失败，检查错误"
+    echo "Build failed, checking errors"
     tmux capture-pane -t {{PROJECT_NAME}}:build -p | grep -i "error"
 fi
 ```
 
-## Self-Test（自检）
+## Self-Test
 
-> 验证 ESP-IDF 工具链和编译环境是否就绪。
+> Verify that the ESP-IDF toolchain and build environment are ready.
 
-### 自检步骤
+### Self-Test Steps
 
 ```bash
-# Test 1: ESP-IDF 环境变量
-[ -n "$IDF_PATH" ] && echo "SELF_TEST_PASS: idf_path ($IDF_PATH)" || echo "SELF_TEST_FAIL: idf_path (运行 . ~/esp/esp-idf/export.sh)"
+# Test 1: ESP-IDF environment variables
+[ -n "$IDF_PATH" ] && echo "SELF_TEST_PASS: idf_path ($IDF_PATH)" || echo "SELF_TEST_FAIL: idf_path (run . ~/esp/esp-idf/export.sh)"
 
-# Test 2: idf.py 可执行
+# Test 2: idf.py executable
 command -v idf.py &>/dev/null && echo "SELF_TEST_PASS: idf_cli" || echo "SELF_TEST_FAIL: idf_cli"
 
-# Test 3: 编译器可用
-command -v xtensa-esp32-elf-gcc &>/dev/null && echo "SELF_TEST_PASS: xtensa_gcc" || echo "SELF_TEST_WARN: xtensa_gcc (可能使用 riscv 目标)"
+# Test 3: Compiler available
+command -v xtensa-esp32-elf-gcc &>/dev/null && echo "SELF_TEST_PASS: xtensa_gcc" || echo "SELF_TEST_WARN: xtensa_gcc (may be using riscv target)"
 
-# Test 4: 创建并编译最小项目
+# Test 4: Create and build minimal project
 TMP_DIR=$(mktemp -d)
 mkdir -p "$TMP_DIR/main"
 cat > "$TMP_DIR/CMakeLists.txt" << 'EOF'
@@ -154,36 +154,36 @@ cd "$TMP_DIR" && idf.py set-target esp32 &>/dev/null && idf.py build &>/dev/null
 rm -rf "$TMP_DIR"
 ```
 
-### 预期结果
+### Expected Results
 
-| 测试项 | 预期输出 | 失败影响 |
+| Test Item | Expected Output | Failure Impact |
 |--------|---------|----------|
-| idf_path | `SELF_TEST_PASS` | 无法使用 ESP-IDF |
-| idf_cli | `SELF_TEST_PASS` | 无法编译/烧录 |
-| xtensa_gcc | `SELF_TEST_PASS/WARN` | ESP32 目标不可编译 |
-| minimal_build | `SELF_TEST_PASS` | 编译环境有问题 |
+| idf_path | `SELF_TEST_PASS` | Cannot use ESP-IDF |
+| idf_cli | `SELF_TEST_PASS` | Cannot build/flash |
+| xtensa_gcc | `SELF_TEST_PASS/WARN` | Cannot build for ESP32 target |
+| minimal_build | `SELF_TEST_PASS` | Build environment has issues |
 
-### Blind Test（盲测）
+### Blind Test
 
-**测试 Prompt:**
+**Test Prompt:**
 ```
-你是一个 AI 开发助手。请阅读此 Skill，然后：
-1. 检查 ESP-IDF 环境是否加载
-2. 创建一个最小的 ESP32 项目（只有 app_main 打印一行日志）
-3. 执行 idf.py build 并报告结果
-4. 如果编译成功，报告固件大小
-5. 清理临时文件
+You are an AI development assistant. Please read this Skill, then:
+1. Check if the ESP-IDF environment is loaded
+2. Create a minimal ESP32 project (only app_main printing one log line)
+3. Run idf.py build and report the result
+4. If the build succeeds, report the firmware size
+5. Clean up temporary files
 ```
 
-**验收标准:**
-- [ ] Agent 先加载 ESP-IDF 环境（source export.sh）
-- [ ] Agent 创建了正确的 CMakeLists.txt 结构
-- [ ] Agent 执行 build 并检查退出码
-- [ ] Agent 报告 build 成功或失败原因
+**Acceptance Criteria:**
+- [ ] Agent loads the ESP-IDF environment first (source export.sh)
+- [ ] Agent creates the correct CMakeLists.txt structure
+- [ ] Agent runs build and checks the exit code
+- [ ] Agent reports build success or failure reason
 
-## 成功标准
+## Success Criteria
 
-- [ ] `idf.py build` 编译成功，无错误
-- [ ] 固件大小在 flash 容量限制内
-- [ ] `idf.py flash` 烧录成功
-- [ ] 设备重启后串口输出正常启动日志
+- [ ] `idf.py build` compiles successfully with no errors
+- [ ] Firmware size is within flash capacity limits
+- [ ] `idf.py flash` completes successfully
+- [ ] Device outputs normal boot logs via serial after restart

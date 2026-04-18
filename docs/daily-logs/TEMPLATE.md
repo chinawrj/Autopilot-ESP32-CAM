@@ -1,78 +1,78 @@
-# Day NNN — [简要描述]
+# Day NNN — [Brief Description]
 
-**日期**: YYYY-MM-DD
-**里程碑**: MX ([里程碑名称])
+**Date**: YYYY-MM-DD
+**Milestone**: MX ([Milestone Name])
 
-## 晨会计划
+## Morning Planning
 
-### 昨日回顾
-- 完成: 
-- 未完成: 
-- 阻塞: 
+### Yesterday's Review
+- Complete: 
+- Incomplete: 
+- Blocked: 
 
-### 今日目标
-1. [ ] 目标1 — 验收: [可验证的完成标准]
-2. [ ] 目标2 — 验收: [可验证的完成标准]
-3. [ ] 目标3 — 验收: [可验证的完成标准]
+### Today's Goals
+1. [ ] Goal 1 — Acceptance Criteria: [Verifiable completion criteria]
+2. [ ] Goal 2 — Acceptance Criteria: [Verifiable completion criteria]
+3. [ ] Goal 3 — Acceptance Criteria: [Verifiable completion criteria]
 
-### 风险与依赖
+### Risks and Dependencies
 - 
 
-## 执行记录
+## Execution Log
 
-### 任务1: [名称]
+### Task 1: [Name]
 
-**状态**: ⬜/🔄/✅/❌
+**Status**: ⬜/🔄/✅/❌
 
 ```
-编码 → 编译 → 烧录 → 串口验证 → Web 验证
+Code → Build → Flash → Serial verify → Web verify
 ```
 
-- 关键决策: 
-- 遇到的问题: 
-- 解决方案: 
-- 测试结果: ✅/❌
+- Key Decisions: 
+- Issues Encountered: 
+- Solution: 
+- Test Results: ✅/❌
 
-### 任务2: [名称]
+### Task 2: [Name]
 
-**状态**: ⬜/🔄/✅/❌
+**Status**: ⬜/🔄/✅/❌
 
-- 关键决策: 
-- 测试结果: ✅/❌
+- Key Decisions: 
+- Test Results: ✅/❌
 
-## 晚间回顾
+## Evening Review
 
-### 完成状态
+### Completion Status
 
-| 任务 | 状态 | 备注 |
-|------|------|------|
-| 任务1 | | |
-| 任务2 | | |
-| 任务3 | | |
+| Task | Status | Notes |
+|------|--------|-------|
+| Task 1 | | |
+| Task 2 | | |
+| Task 3 | | |
 
-### 代码指标
-- 新增/修改代码行: 
-- 编译警告数: 
+### Code Metrics
+- New/modified lines: 
+- Build warnings: 
 - Git commits: 
-- 内存使用 (free heap): 
+- Memory usage (free heap): 
 
-### 代码健康度检查
-| 指标 | 值 | 阈值 | 状态 |
-|------|-----|------|------|
-| 编译警告 | | ≥ 3 | ✅/⚠️ |
-| 最大文件行数 | | ≥ 250 | ✅/⚠️ |
-| TODO/FIXME 数 | | ≥ 5 | ✅/⚠️ |
-| 连续功能开发天数 | | ≥ 4 | ✅/⚠️ |
-| Free heap 趋势 | | 持续下降 | ✅/⚠️ |
+### Code Health Check
+| Metric | Value | Threshold | Status |
+|--------|-------|-----------|--------|
+| Build warnings | | ≥ 3 | ✅/⚠️ |
+| Max file lines | | ≥ 250 | ✅/⚠️ |
+| TODO/FIXME count | | ≥ 5 | ✅/⚠️ |
+| Consecutive dev days | | ≥ 4 | ✅/⚠️ |
+| Free heap trend | | Declining | ✅/⚠️ |
 
-**触发重构日?** ✅ 否 / ⚠️ 是 → 明日重构
+**Trigger refactoring day?** ✅ No / ⚠️ Yes → Refactor tomorrow
 
-### 明日计划
+### Tomorrow's Plan
 1. 
 2. 
 
 ## Git Log
 
 ```
-[今日的 git log --oneline 输出]
+[Today's git log --oneline output]
 ```

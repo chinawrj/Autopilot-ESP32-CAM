@@ -1,6 +1,6 @@
 #!/bin/bash
 # self-test for esp32-serial-tools
-# 运行: bash .github/skills/esp32-serial-tools/self-test.sh
+# Run: bash .github/skills/esp32-serial-tools/self-test.sh
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$SCRIPT_DIR/../_common/detect-python.sh"
@@ -31,22 +31,22 @@ else
   PYTHON="python3"  # fallback for non-serial tests
 fi
 
-# --- Test 2: 串口设备检测 ---
+# --- Test 2: Serial device detection ---
 PORTS=$(ls /dev/tty.usb* /dev/cu.usb* /dev/ttyUSB* /dev/ttyACM* 2>/dev/null)
 if [ -n "$PORTS" ]; then
   test_pass "serial_device"
 else
-  skip_case "serial_device" "无 USB 串口设备连接"
+  skip_case "serial_device" "no USB serial device connected"
 fi
 
-# --- Test 3: idf.py monitor 存在 ---
+# --- Test 3: idf.py monitor exists ---
 if command -v idf.py &>/dev/null; then
   test_pass "idf_monitor"
 else
-  skip_case "idf_monitor" "ESP-IDF 未加载"
+  skip_case "idf_monitor" "ESP-IDF not loaded"
 fi
 
-# --- Test 4: 日志模式匹配逻辑 ---
+# --- Test 4: Log pattern matching logic ---
 test_case "pattern_matching" $PYTHON -c "
 import re
 test_lines = [
@@ -68,7 +68,7 @@ assert ip_found, 'IP pattern not found'
 assert error_found, 'Error pattern not found'
 "
 
-# --- Test 5: 日志级别过滤 ---
+# --- Test 5: Log level filter ---
 test_case "log_level_filter" $PYTHON -c "
 import re
 lines = [
@@ -85,7 +85,7 @@ for line in lines:
 assert levels == {'I': 1, 'W': 1, 'E': 1, 'D': 1}, f'Wrong levels: {levels}'
 "
 
-# --- 汇总 ---
+# --- Summary ---
 echo ""
 echo "Results: $PASS passed, $FAIL failed, $SKIP skipped"
 exit $FAIL

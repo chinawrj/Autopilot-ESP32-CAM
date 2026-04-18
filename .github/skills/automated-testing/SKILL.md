@@ -3,49 +3,49 @@ name: automated-testing
 description: "Automated testing for ESP32 projects: serial port validation, web UI browser verification, test pyramid. Use when: writing tests, verifying firmware, checking web interface, e2e testing."
 ---
 
-# Skill: 自动化测试
+# Skill: Automated Testing
 
-## 用途
+## Purpose
 
-定义嵌入式项目的自动化测试策略，结合串口验证和 Web UI 验证实现端到端测试。
+Defines the automated testing strategy for embedded projects, combining serial port validation and Web UI verification for end-to-end testing.
 
-**何时使用：**
-- 需要验证固件功能是否正常
-- 需要验证 Web UI 是否正确显示
-- 需要回归测试防止功能退化
-- 持续集成/持续开发流程中
+**When to use:**
+- Need to verify that firmware features work correctly
+- Need to verify that the Web UI renders correctly
+- Need regression testing to prevent feature degradation
+- In continuous integration / continuous development workflows
 
-**何时不使用：**
-- 手动测试足够的一次性验证
-- 没有可测试接口的纯硬件项目
+**When not to use:**
+- One-off verifications where manual testing is sufficient
+- Pure hardware projects with no testable interfaces
 
-## 前置条件
+## Prerequisites
 
-- 设备已连接并可通过串口通信
-- Web UI 已可访问（如适用）
-- CDP 浏览器工具已配置（如需 Web 测试）
-- tmux 环境已准备
+- Device is connected and accessible via serial port
+- Web UI is accessible (if applicable)
+- CDP browser tools are configured (if web testing is needed)
+- tmux environment is ready
 
-## 操作步骤
+## Steps
 
-### 1. 测试金字塔
+### 1. Test Pyramid
 
 ```
         ┌─────────┐
-        │ E2E     │  ← CDP + 串口：完整流程验证
+        │ E2E     │  ← CDP + Serial: full flow verification
         │ Tests   │
        ┌┴─────────┴┐
-       │ Integration│  ← 串口：模块间交互验证
+       │ Integration│  ← Serial: inter-module interaction verification
        │ Tests      │
       ┌┴────────────┴┐
-      │  Unit Tests   │  ← 编译时：组件级测试
+      │  Unit Tests   │  ← Compile-time: component-level tests
       └───────────────┘
 ```
 
-### 2. 串口自动化测试
+### 2. Serial Port Automated Testing
 
 ```python
-"""test_serial.py - 串口自动化测试"""
+"""test_serial.py - Serial port automated testing"""
 import serial
 import re
 import time
@@ -57,7 +57,7 @@ class ESP32SerialTest:
         self.results = []
 
     def wait_for_pattern(self, pattern, timeout=30):
-        """等待串口输出匹配指定模式"""
+        """Wait for serial output to match the specified pattern"""
         start = time.time()
         buffer = ""
         while time.time() - start < timeout:
@@ -68,38 +68,38 @@ class ESP32SerialTest:
         return False, buffer
 
     def test_boot(self):
-        """测试设备正常启动"""
+        """Test that the device boots normally"""
         ok, output = self.wait_for_pattern(r"app_main: Starting", timeout=15)
-        self._record("boot", ok, "设备启动" if ok else f"启动超时: {output[-200:]}")
+        self._record("boot", ok, "Device booted" if ok else f"Boot timeout: {output[-200:]}")
 
     def test_wifi_connect(self):
-        """测试 WiFi 连接"""
+        """Test WiFi connection"""
         ok, output = self.wait_for_pattern(r"got ip:(\d+\.\d+\.\d+\.\d+)", timeout=20)
         if ok:
             ip = re.search(r"got ip:(\d+\.\d+\.\d+\.\d+)", output).group(1)
-            self._record("wifi", True, f"WiFi 已连接, IP: {ip}")
+            self._record("wifi", True, f"WiFi connected, IP: {ip}")
         else:
-            self._record("wifi", False, "WiFi 连接超时")
+            self._record("wifi", False, "WiFi connection timeout")
 
     def test_http_server(self):
-        """测试 HTTP 服务器启动"""
+        """Test HTTP server startup"""
         ok, output = self.wait_for_pattern(r"httpd.*start|server.*listening", timeout=10)
-        self._record("http", ok, "HTTP 服务已启动" if ok else "HTTP 服务未启动")
+        self._record("http", ok, "HTTP server started" if ok else "HTTP server not started")
 
     def test_camera_init(self):
-        """测试摄像头初始化"""
+        """Test camera initialization"""
         ok, output = self.wait_for_pattern(r"camera.*init|cam_hal", timeout=10)
-        self._record("camera", ok, "摄像头初始化成功" if ok else "摄像头初始化失败")
+        self._record("camera", ok, "Camera initialized" if ok else "Camera initialization failed")
 
     def test_no_errors(self):
-        """检查无严重错误"""
-        time.sleep(5)  # 等待稳定
+        """Check for no critical errors"""
+        time.sleep(5)  # Wait for stabilization
         output = ""
         while self.ser.in_waiting:
             output += self.ser.readline().decode("utf-8", errors="ignore")
         errors = re.findall(r"(error|panic|abort|assert failed)", output, re.IGNORECASE)
         ok = len(errors) == 0
-        self._record("no_errors", ok, "无错误" if ok else f"发现错误: {errors}")
+        self._record("no_errors", ok, "No errors" if ok else f"Errors found: {errors}")
 
     def _record(self, name, passed, message):
         self.results.append({"name": name, "passed": passed, "message": message})
@@ -107,9 +107,9 @@ class ESP32SerialTest:
         print(f"  {status}: {name} - {message}")
 
     def run_all(self):
-        """运行所有测试"""
+        """Run all tests"""
         print("=" * 50)
-        print("ESP32 串口自动化测试")
+        print("ESP32 Serial Port Automated Tests")
         print("=" * 50)
         self.test_boot()
         self.test_wifi_connect()
@@ -120,7 +120,7 @@ class ESP32SerialTest:
         passed = sum(1 for r in self.results if r["passed"])
         total = len(self.results)
         print("=" * 50)
-        print(f"结果: {passed}/{total} 通过")
+        print(f"Results: {passed}/{total} passed")
         return passed == total
 
 if __name__ == "__main__":
@@ -129,10 +129,10 @@ if __name__ == "__main__":
     sys.exit(0 if success else 1)
 ```
 
-### 3. Web UI 自动化测试
+### 3. Web UI Automated Testing
 
 ```python
-"""test_web_ui.py - Web UI 自动化测试（使用 Patchright）"""
+"""test_web_ui.py - Web UI automated testing (using Patchright)"""
 from patchright.sync_api import sync_playwright
 
 class WebUITest:
@@ -145,47 +145,47 @@ class WebUITest:
         self.results = []
 
     def test_page_loads(self):
-        """测试页面可以加载"""
+        """Test that the page loads"""
         try:
             self.page.goto(f"http://{self.device_ip}/", timeout=10000)
             self.page.wait_for_load_state("networkidle")
-            self._record("page_load", True, "页面加载成功")
+            self._record("page_load", True, "Page loaded successfully")
         except Exception as e:
-            self._record("page_load", False, f"页面加载失败: {e}")
+            self._record("page_load", False, f"Page load failed: {e}")
 
     def test_video_stream(self):
-        """测试视频流是否显示"""
+        """Test that the video stream is visible"""
         stream = self.page.locator("img#stream, video#stream, img[src*='stream']")
         visible = stream.is_visible(timeout=5000)
-        self._record("video_stream", visible, "视频流可见" if visible else "视频流不可见")
+        self._record("video_stream", visible, "Video stream visible" if visible else "Video stream not visible")
 
     def test_sensor_data(self):
-        """测试传感器数据是否显示"""
-        # 温度
+        """Test that sensor data is displayed"""
+        # Temperature
         temp = self.page.locator("[data-sensor='temperature'], #temperature, .temperature")
         temp_visible = temp.is_visible(timeout=3000)
         self._record("temperature", temp_visible,
-                     f"温度: {temp.text_content()}" if temp_visible else "温度数据不可见")
+                     f"Temperature: {temp.text_content()}" if temp_visible else "Temperature data not visible")
 
-        # 湿度
+        # Humidity
         humidity = self.page.locator("[data-sensor='humidity'], #humidity, .humidity")
         hum_visible = humidity.is_visible(timeout=3000)
         self._record("humidity", hum_visible,
-                     f"湿度: {humidity.text_content()}" if hum_visible else "湿度数据不可见")
+                     f"Humidity: {humidity.text_content()}" if hum_visible else "Humidity data not visible")
 
     def test_data_updates(self):
-        """测试数据是否定期更新"""
+        """Test that data updates periodically"""
         temp_el = self.page.locator("[data-sensor='temperature'], #temperature, .temperature")
         if not temp_el.is_visible(timeout=3000):
-            self._record("data_update", False, "无法获取温度元素")
+            self._record("data_update", False, "Cannot locate temperature element")
             return
 
         value1 = temp_el.text_content()
-        self.page.wait_for_timeout(5000)  # 等待 5 秒
+        self.page.wait_for_timeout(5000)  # Wait 5 seconds
         value2 = temp_el.text_content()
-        # 数据可能相同但至少不应该是空的
+        # Data may be the same but should at least not be empty
         ok = value1 is not None and len(value1) > 0
-        self._record("data_update", ok, f"数据采集正常: {value1} -> {value2}")
+        self._record("data_update", ok, f"Data collection OK: {value1} -> {value2}")
 
     def _record(self, name, passed, message):
         self.results.append({"name": name, "passed": passed, "message": message})
@@ -194,7 +194,7 @@ class WebUITest:
 
     def run_all(self):
         print("=" * 50)
-        print("Web UI 自动化测试")
+        print("Web UI Automated Tests")
         print("=" * 50)
         self.test_page_loads()
         self.test_video_stream()
@@ -204,7 +204,7 @@ class WebUITest:
         passed = sum(1 for r in self.results if r["passed"])
         total = len(self.results)
         print("=" * 50)
-        print(f"结果: {passed}/{total} 通过")
+        print(f"Results: {passed}/{total} passed")
         return passed == total
 
     def close(self):
@@ -212,65 +212,65 @@ class WebUITest:
         self.pw.stop()
 ```
 
-### 4. 端到端测试流程
+### 4. End-to-End Test Flow
 
 ```bash
 #!/bin/bash
-# run-e2e-tests.sh - 端到端测试流程
+# run-e2e-tests.sh - End-to-end test flow
 
-echo "=== E2E 测试开始 ==="
+echo "=== E2E Tests Starting ==="
 
-# Step 1: 编译并烧录
-echo "[1/4] 编译..."
+# Step 1: Build and flash
+echo "[1/4] Building..."
 idf.py build || exit 1
 
-echo "[2/4] 烧录..."
+echo "[2/4] Flashing..."
 idf.py -p /dev/ttyUSB0 flash || exit 1
 
-# Step 3: 等待设备启动
-echo "[3/4] 等待设备启动 (10s)..."
+# Step 3: Wait for device to boot
+echo "[3/4] Waiting for device to boot (10s)..."
 sleep 10
 
-# Step 4: 运行串口测试
-echo "[4/4] 运行串口测试..."
+# Step 4: Run serial tests
+echo "[4/4] Running serial tests..."
 python test_serial.py
 SERIAL_RESULT=$?
 
-# Step 5: 运行 Web UI 测试（如果串口测试通过）
+# Step 5: Run Web UI tests (if serial tests passed)
 if [ $SERIAL_RESULT -eq 0 ]; then
-    echo "[5/5] 运行 Web UI 测试..."
+    echo "[5/5] Running Web UI tests..."
     python test_web_ui.py
     WEB_RESULT=$?
 else
-    echo "串口测试失败，跳过 Web UI 测试"
+    echo "Serial tests failed, skipping Web UI tests"
     WEB_RESULT=1
 fi
 
-# 汇总
+# Summary
 echo ""
-echo "=== 测试汇总 ==="
-echo "串口测试: $([ $SERIAL_RESULT -eq 0 ] && echo '✅ PASS' || echo '❌ FAIL')"
-echo "Web UI 测试: $([ $WEB_RESULT -eq 0 ] && echo '✅ PASS' || echo '❌ FAIL')"
+echo "=== Test Summary ==="
+echo "Serial tests: $([ $SERIAL_RESULT -eq 0 ] && echo '✅ PASS' || echo '❌ FAIL')"
+echo "Web UI tests: $([ $WEB_RESULT -eq 0 ] && echo '✅ PASS' || echo '❌ FAIL')"
 
 exit $(( SERIAL_RESULT + WEB_RESULT ))
 ```
 
-## Self-Test（自检）
+## Self-Test
 
-> 验证自动化测试框架的依赖和核心逻辑。
+> Verify the automated testing framework's dependencies and core logic.
 
-### 自检步骤
+### Self-Test Steps
 
 ```bash
-# Test 1: pyserial 和 patchright 可用
+# Test 1: pyserial and patchright are available
 python3 -c "import serial; print('SELF_TEST_PASS: pyserial')" 2>/dev/null || echo "SELF_TEST_FAIL: pyserial"
 python3 -c "from patchright.sync_api import sync_playwright; print('SELF_TEST_PASS: patchright')" 2>/dev/null || echo "SELF_TEST_FAIL: patchright"
 
-# Test 2: 测试类的基本结构验证
+# Test 2: Basic test class structure validation
 python3 -c "
 import re, sys
 
-# 模拟串口测试逻辑
+# Simulated serial test logic
 class MockSerialTest:
     def __init__(self):
         self.results = []
@@ -294,33 +294,33 @@ assert len(t.results) == 2, f'Expected 2 results, got {len(t.results)}'
 print('SELF_TEST_PASS: test_framework')
 " || echo "SELF_TEST_FAIL: test_framework"
 
-# Test 3: bash 测试流程逻辑
+# Test 3: Bash test flow logic
 bash -c '
 RESULT=0
 [ $RESULT -eq 0 ] && echo "SELF_TEST_PASS: bash_test_flow" || echo "SELF_TEST_FAIL: bash_test_flow"
 '
 ```
 
-### Blind Test（盲测）
+### Blind Test
 
-**测试 Prompt:**
+**Test Prompt:**
 ```
-你是一个 AI 开发助手。请阅读此 Skill，然后：
-1. 编写一个简化版的串口测试类，只包含 test_pattern 方法
-2. 用以下模拟数据测试："got ip:10.0.0.1", "httpd_start: Started", "assert failed"
-3. 输出 PASS/FAIL 汇总
-4. 解释为什么测试金字塔中串口测试在 Web UI 测试之前
+You are an AI development assistant. Please read this Skill, then:
+1. Write a simplified serial test class with only a test_pattern method
+2. Test it with the following simulated data: "got ip:10.0.0.1", "httpd_start: Started", "assert failed"
+3. Output a PASS/FAIL summary
+4. Explain why serial tests come before Web UI tests in the test pyramid
 ```
 
-**验收标准:**
-- [ ] Agent 使用了 Skill 中定义的测试类结构
-- [ ] Agent 正确提取了 IP 地址和错误
-- [ ] Agent 理解了测试金字塔的分层逻辑
-- [ ] Agent 的输出包含清晰的 PASS/FAIL 标记
+**Acceptance Criteria:**
+- [ ] Agent uses the test class structure defined in this Skill
+- [ ] Agent correctly extracts IP addresses and errors
+- [ ] Agent understands the layered logic of the test pyramid
+- [ ] Agent output includes clear PASS/FAIL markers
 
-## 成功标准
+## Success Criteria
 
-- [ ] 串口自动化测试全部通过
-- [ ] Web UI 自动化测试全部通过
-- [ ] 端到端测试流程可一键执行
-- [ ] 测试结果有清晰的 PASS/FAIL 输出
+- [ ] All serial automated tests pass
+- [ ] All Web UI automated tests pass
+- [ ] End-to-end test flow can be executed with a single command
+- [ ] Test results have clear PASS/FAIL output

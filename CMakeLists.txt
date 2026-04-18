@@ -1,5 +1,5 @@
-# Autopilot ESP32-CAM — 实时摄像头 Web 服务器
-# ESP-IDF v5.x 项目
+# Autopilot ESP32-CAM — Real-time Camera Web Server
+# ESP-IDF v5.x Project
 
 cmake_minimum_required(VERSION 3.16)
 

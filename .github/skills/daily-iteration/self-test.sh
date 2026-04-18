@@ -1,6 +1,6 @@
 #!/bin/bash
 # self-test for daily-iteration
-# 运行: bash .github/skills/daily-iteration/self-test.sh
+# Run: bash .github/skills/daily-iteration/self-test.sh
 
 PASS=0
 FAIL=0
@@ -16,40 +16,40 @@ test_case() {
   fi
 }
 
-# --- Test 1: 目录结构创建 ---
+# --- Test 1: directory structure creation ---
 test_case "docs_dir_creation" bash -c '
   TMP=$(mktemp -d)
   mkdir -p "$TMP/docs/daily-logs" && [ -d "$TMP/docs/daily-logs" ]
   RC=$?; rm -rf "$TMP"; exit $RC
 '
 
-# --- Test 2: Markdown 模板渲染 ---
+# --- Test 2: Markdown template rendering ---
 test_case "markdown_template" bash -c '
   TMP=$(mktemp -d)
   mkdir -p "$TMP/docs/daily-logs"
   cat > "$TMP/docs/daily-logs/day-001.md" << EOF
-## Day 1 计划
-**日期:** 2025-01-01
-**目标:** 基础框架搭建
+## Day 1 Plan
+**Date:** 2025-01-01
+**Goal:** Set up basic framework
 
-### 任务列表
-- [ ] 初始化项目
-- [ ] 配置编译环境
-- [x] 创建目录结构
+### Task List
+- [ ] Initialize project
+- [ ] Configure build environment
+- [x] Create directory structure
 
-### 验证结果
-| 项目 | 状态 |
-|------|------|
-| 编译 | ⏳ |
+### Verification Results
+| Item | Status |
+|------|--------|
+| Build | ⏳ |
 EOF
-  # 验证 markdown 结构
+  # Verify markdown structure
   grep -q "## Day 1" "$TMP/docs/daily-logs/day-001.md" && \
   grep -q "\- \[ \]" "$TMP/docs/daily-logs/day-001.md" && \
   grep -q "\- \[x\]" "$TMP/docs/daily-logs/day-001.md"
   RC=$?; rm -rf "$TMP"; exit $RC
 '
 
-# --- Test 3: checklist 完成度统计 ---
+# --- Test 3: checklist completion statistics ---
 test_case "checklist_stats" bash -c '
   TMP=$(mktemp)
   cat > "$TMP" << EOF
@@ -65,13 +65,13 @@ EOF
   [ "$TOTAL" -eq 5 ] && [ "$DONE" -eq 3 ]
 '
 
-# --- Test 4: 日期格式生成 ---
+# --- Test 4: date format generation ---
 test_case "date_format" bash -c '
   DATE=$(date +%Y-%m-%d)
   echo "$DATE" | grep -qE "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
 '
 
-# --- Test 5: 日志文件命名模式 ---
+# --- Test 5: log file naming pattern ---
 test_case "log_naming_pattern" bash -c '
   for i in 1 10 100; do
     NAME=$(printf "day-%03d.md" $i)
@@ -79,7 +79,7 @@ test_case "log_naming_pattern" bash -c '
   done
 '
 
-# --- 汇总 ---
+# --- Summary ---
 echo ""
 echo "Results: $PASS passed, $FAIL failed"
 exit $FAIL

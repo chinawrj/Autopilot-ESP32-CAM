@@ -1,4 +1,4 @@
-# v2.0.0 — Production-Ready Stable Release | 生产就绪稳定版
+# v2.0.0 — Production-Ready Stable Release
 
 ## Autopilot ESP32-CAM v2.0.0
 
@@ -6,40 +6,37 @@ The first production-ready release. 33 days of daily hardware-verified iteration
 delivering a complete autonomous camera web server with monitoring, security, and
 comprehensive test coverage.
 
-首个生产就绪版本。33 天每日硬件验证迭代，交付完整的自动驾驶摄像头 Web 服务器，
-具备监控、安全和全面的测试覆盖。
-
 ---
 
-## 🆕 What's New Since v1.3.0 | 新增内容
+## 🆕 What's New Since v1.3.0
 
-### Reliability | 可靠性
+### Reliability
 
 - **Task Watchdog (30s)** — Hardware WDT auto-reboots on task hang
 - **Heap Monitoring** — Periodic integrity checks + low-memory warnings
 - **Error Audit** — All error paths hardened, no silent failures
 
-### Security | 安全
+### Security
 
 - **Path Traversal Protection** — SD card paths validated against `../` attacks
 - **HTTP Security Headers** — nosniff, SAMEORIGIN, no-store on all responses
 - **Rate Limiting** — Token bucket algorithm, 429 responses with Retry-After
 
-### Features | 功能
+### Features
 
 - **System Diagnostics** — `/api/system/info` with health status, chip info, memory, uptime
 - **Enhanced Dashboard** — Real-time panels: chip, IDF version, PSRAM, tasks
 - **App.js Extraction** — Cacheable frontend JS, deferred MJPEG loading
 - **API Documentation** — Complete REST API reference at `docs/API.md`
 
-### Testing | 测试
+### Testing
 
 - **50 Unit Tests** — 5 suites covering all modules (host-based, no hardware needed)
 - **39 Browser Tests** — Patchright integration tests covering all endpoints + security
 
 ---
 
-## 📊 Verified | 已验证
+## 📊 Verified
 
 - ✅ Build: 0 warnings, binary ~1.29 MB (59% partition free)
 - ✅ Unit tests: 50/50 via `ctest` (5 suites, host-based)
@@ -50,7 +47,7 @@ comprehensive test coverage.
 
 ---
 
-## 📊 Performance | 性能指标
+## 📊 Performance
 
 | Metric | Value |
 |--------|-------|
@@ -67,7 +64,7 @@ comprehensive test coverage.
 
 ---
 
-## 🔧 Hardware | 硬件
+## 🔧 Hardware
 
 | Parameter | Value |
 |-----------|-------|
@@ -80,7 +77,7 @@ comprehensive test coverage.
 
 ---
 
-## 🚀 Quick Start | 快速开始
+## 🚀 Quick Start
 
 ```bash
 # 1. Source ESP-IDF
@@ -104,7 +101,7 @@ See [README.md](README.md) and [docs/API.md](docs/API.md) for full documentation
 
 ---
 
-## 📅 Development Timeline | 开发时间线
+## 📅 Development Timeline
 
 | Day | Milestone | Deliverable |
 |-----|-----------|-------------|

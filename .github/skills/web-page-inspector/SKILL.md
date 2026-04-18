@@ -3,37 +3,37 @@ name: web-page-inspector
 description: "Web page content inspection and data extraction with Patchright. Use when: checking device web UI, extracting sensor data from pages, verifying HTML rendering."
 ---
 
-# Skill: Web 页面检查与数据提取
+# Skill: Web Page Inspection & Data Extraction
 
-## 用途
+## Purpose
 
-通过浏览器访问设备 Web 页面，检查页面结构、提取显示的数据、验证实时流媒体。
+Access device web pages via the browser to inspect page structure, extract displayed data, and verify live streaming media.
 
-**何时使用：**
-- 需要检查设备 Web 界面是否正常渲染
-- 需要提取传感器数据、统计信息等
-- 需要验证实时视频/音频流状态
-- 需要获取页面上动态更新的内容
+**When to use:**
+- Need to check whether the device web UI renders correctly
+- Need to extract sensor data, statistics, etc.
+- Need to verify live video/audio stream status
+- Need to retrieve dynamically updated content from the page
 
-**何时不使用：**
-- 设备没有 Web 界面
-- 只需要 REST API 交互（直接用 curl）
+**When not to use:**
+- The device has no web UI
+- Only REST API interaction is needed (use curl directly)
 
-## 前置条件
+## Prerequisites
 
-- CDP 浏览器工具已启动（见 `cdp-web-inspector` skill）
-- 设备 Web 服务已运行
-- 已知设备 IP 地址
+- CDP browser tool is running (see `cdp-web-inspector` skill)
+- Device web server is running
+- Device IP address is known
 
-## 操作步骤
+## Steps
 
-### 1. 页面结构探索
+### 1. Explore Page Structure
 
 ```python
 from patchright.sync_api import sync_playwright
 
 def inspect_page(device_ip):
-    """探索目标页面的 DOM 结构"""
+    """Explore the DOM structure of the target page"""
     pw = sync_playwright().start()
     browser = pw.chromium.connect_over_cdp("http://localhost:9222")
     page = browser.contexts[0].new_page()
@@ -41,23 +41,23 @@ def inspect_page(device_ip):
     page.goto(f"http://{device_ip}/")
     page.wait_for_load_state("networkidle")
 
-    # 获取页面基本信息
+    # Get basic page info
     info = {
         "title": page.title(),
         "url": page.url,
     }
 
-    # 获取所有可见文本
+    # Get all visible text
     info["text_content"] = page.locator("body").text_content()
 
-    # 获取所有图片元素
+    # Get all image elements
     images = page.locator("img").all()
     info["images"] = [
         {"src": img.get_attribute("src"), "id": img.get_attribute("id")}
         for img in images
     ]
 
-    # 获取所有表格数据
+    # Get all table data
     tables = page.locator("table").all()
     info["tables"] = []
     for table in tables:
@@ -73,14 +73,14 @@ def inspect_page(device_ip):
     return info
 ```
 
-### 2. 传感器数据提取
+### 2. Sensor Data Extraction
 
 ```python
 def extract_sensor_data(page):
-    """从页面提取传感器数据"""
+    """Extract sensor data from the page"""
     data = {}
 
-    # 策略1：通过 ID 查找
+    # Strategy 1: Find by ID
     selectors = {
         "temperature": "#temperature, [data-sensor='temperature'], .temp-value",
         "humidity": "#humidity, [data-sensor='humidity'], .humidity-value",
@@ -92,10 +92,10 @@ def extract_sensor_data(page):
         if el.count() > 0 and el.first.is_visible():
             data[name] = el.first.text_content().strip()
 
-    # 策略2：通过 JavaScript 提取
+    # Strategy 2: Extract via JavaScript
     js_data = page.evaluate("""() => {
         const result = {};
-        // 查找包含数字和单位的元素
+        // Find elements containing numbers and units
         document.querySelectorAll('[class*="sensor"], [class*="data"], [class*="value"]')
             .forEach(el => {
                 const text = el.textContent.trim();
@@ -111,11 +111,11 @@ def extract_sensor_data(page):
     return data
 ```
 
-### 3. 视频流检测
+### 3. Video Stream Detection
 
 ```python
 def check_video_stream(page):
-    """检测视频流是否正常工作"""
+    """Detect whether the video stream is working properly"""
     result = {
         "has_stream": False,
         "stream_type": None,
@@ -123,27 +123,27 @@ def check_video_stream(page):
         "is_loading": False,
     }
 
-    # 检查 <img> 标签的 MJPEG 流
+    # Check <img> tag MJPEG streams
     mjpeg = page.locator("img[src*='stream'], img[src*='mjpeg'], img[src*=':81']")
     if mjpeg.count() > 0 and mjpeg.first.is_visible():
         result["has_stream"] = True
         result["stream_type"] = "MJPEG"
         result["stream_url"] = mjpeg.first.get_attribute("src")
 
-    # 检查 <video> 标签
+    # Check <video> tags
     video = page.locator("video")
     if video.count() > 0 and video.first.is_visible():
         result["has_stream"] = True
         result["stream_type"] = "VIDEO"
         result["stream_url"] = video.first.get_attribute("src")
 
-    # 检查 canvas (WebRTC 等)
+    # Check canvas (WebRTC, etc.)
     canvas = page.locator("canvas#stream, canvas.video-canvas")
     if canvas.count() > 0 and canvas.first.is_visible():
         result["has_stream"] = True
         result["stream_type"] = "CANVAS"
 
-    # 验证流是否在加载（通过图片尺寸变化）
+    # Verify stream is loading (by checking image dimension changes)
     if result["has_stream"] and result["stream_type"] == "MJPEG":
         size1 = page.evaluate("""(sel) => {
             const img = document.querySelector(sel);
@@ -154,14 +154,14 @@ def check_video_stream(page):
     return result
 ```
 
-### 4. 周期性数据采集
+### 4. Periodic Data Collection
 
 ```python
 import time
 import json
 
 def collect_data_over_time(page, interval=5, duration=60):
-    """周期性采集页面数据"""
+    """Periodically collect page data"""
     samples = []
     start = time.time()
 
@@ -178,42 +178,42 @@ def collect_data_over_time(page, interval=5, duration=60):
     return samples
 ```
 
-### 5. 页面截图与报告
+### 5. Page Screenshots & Reports
 
 ```python
 def generate_page_report(page, output_dir="reports"):
-    """生成页面检查报告"""
+    """Generate a page inspection report"""
     import os
     os.makedirs(output_dir, exist_ok=True)
 
-    # 全页截图
+    # Full-page screenshot
     page.screenshot(path=f"{output_dir}/full-page.png", full_page=True)
 
-    # 特定区域截图
+    # Specific area screenshot
     stream_el = page.locator("img#stream, video#stream").first
     if stream_el.is_visible():
         stream_el.screenshot(path=f"{output_dir}/stream.png")
 
-    # 生成文本报告
+    # Generate text report
     sensor_data = extract_sensor_data(page)
     stream_status = check_video_stream(page)
 
-    report = f"""# 页面检查报告
+    report = f"""# Page Inspection Report
 
-## 基本信息
+## Basic Info
 - URL: {page.url}
-- 标题: {page.title()}
-- 时间: {time.strftime('%Y-%m-%d %H:%M:%S')}
+- Title: {page.title()}
+- Time: {time.strftime('%Y-%m-%d %H:%M:%S')}
 
-## 传感器数据
+## Sensor Data
 {json.dumps(sensor_data, indent=2, ensure_ascii=False)}
 
-## 视频流状态
+## Video Stream Status
 {json.dumps(stream_status, indent=2, ensure_ascii=False)}
 
-## 截图
-- 全页: full-page.png
-- 视频流: stream.png
+## Screenshots
+- Full page: full-page.png
+- Video stream: stream.png
 """
     with open(f"{output_dir}/report.md", "w") as f:
         f.write(report)
@@ -221,17 +221,17 @@ def generate_page_report(page, output_dir="reports"):
     return report
 ```
 
-## Self-Test（自检）
+## Self-Test
 
-> 验证页面检查和数据提取能力。
+> Verify page inspection and data extraction capabilities.
 
-### 自检步骤
+### Self-Test Steps
 
 ```bash
-# Test 1: Patchright 可用（同 cdp-web-inspector）
+# Test 1: Patchright available (same as cdp-web-inspector)
 python3 -c "from patchright.sync_api import sync_playwright; print('SELF_TEST_PASS: patchright')" 2>/dev/null || echo "SELF_TEST_FAIL: patchright"
 
-# Test 2: 页面数据提取逻辑验证（使用本地 HTML）
+# Test 2: Page data extraction logic validation (using local HTML)
 python3 -c "
 from patchright.sync_api import sync_playwright
 import os
@@ -248,7 +248,7 @@ html = '''
 pw = sync_playwright().start()
 ctx = pw.chromium.launch_persistent_context(
     user_data_dir=os.path.expanduser("~/.patchright-userdata/selftest"),
-    channel='chrome', headless=False, no_viewport=True,  # ⛔ 禁止 headless
+    channel='chrome', headless=False, no_viewport=True,  # ⛔ headless forbidden
 )
 page = ctx.pages[0] if ctx.pages else ctx.new_page()
 page.set_content(html)
@@ -262,14 +262,14 @@ pw.stop()
 print('SELF_TEST_PASS: data_extraction')
 " 2>/dev/null || echo "SELF_TEST_FAIL: data_extraction"
 
-# Test 3: 截图功能
+# Test 3: Screenshot functionality
 python3 -c "
 from patchright.sync_api import sync_playwright
 import os
 pw = sync_playwright().start()
 ctx = pw.chromium.launch_persistent_context(
     user_data_dir=os.path.expanduser("~/.patchright-userdata/selftest"),
-    channel='chrome', headless=False, no_viewport=True)  # ⛔ 禁止 headless
+    channel='chrome', headless=False, no_viewport=True)  # ⛔ headless forbidden
 page = ctx.pages[0] if ctx.pages else ctx.new_page()
 page.set_content('<h1>Screenshot Test</h1>')
 page.screenshot(path='/tmp/__selftest_screenshot__.png')
@@ -281,28 +281,28 @@ print('SELF_TEST_PASS: screenshot')
 " 2>/dev/null || echo "SELF_TEST_FAIL: screenshot"
 ```
 
-### Blind Test（盲测）
+### Blind Test
 
-**测试 Prompt:**
+**Test Prompt:**
 ```
-你是一个 AI 开发助手。请阅读此 Skill，然后：
-1. 创建一个本地 HTML 文件模拟设备页面，包含温度 (22.5°C) 和湿度 (45.0%)
-2. 使用 Patchright 打开该页面
-3. 提取温度和湿度数据
-4. 检测是否有视频流元素
-5. 截图并生成 Markdown 格式的检查报告
+You are an AI development assistant. Read this Skill, then:
+1. Create a local HTML file simulating a device page with temperature (22.5°C) and humidity (45.0%)
+2. Open the page using Patchright
+3. Extract the temperature and humidity data
+4. Detect whether video stream elements exist
+5. Take a screenshot and generate a Markdown inspection report
 ```
 
-**验收标准:**
-- [ ] Agent 使用了 Patchright 而非 Playwright
-- [ ] Agent 正确使用了 locator 提取数据
-- [ ] Agent 生成了包含数据+截图路径的报告
-- [ ] Agent 正确处理了视频流元素不存在的情况
+**Acceptance Criteria:**
+- [ ] Agent used Patchright instead of Playwright
+- [ ] Agent correctly used locators to extract data
+- [ ] Agent generated a report containing data and screenshot paths
+- [ ] Agent correctly handled the case where video stream elements do not exist
 
-## 成功标准
+## Success Criteria
 
-- [ ] 能正确访问设备 Web 页面
-- [ ] 能从页面提取传感器数据
-- [ ] 能检测视频流状态
-- [ ] 能周期性采集数据
-- [ ] 能生成包含截图的检查报告
+- [ ] Can correctly access device web pages
+- [ ] Can extract sensor data from pages
+- [ ] Can detect video stream status
+- [ ] Can periodically collect data
+- [ ] Can generate inspection reports with screenshots

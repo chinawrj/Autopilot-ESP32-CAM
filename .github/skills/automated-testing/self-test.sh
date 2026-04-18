@@ -1,6 +1,6 @@
 #!/bin/bash
 # self-test for automated-testing
-# 运行: bash .github/skills/automated-testing/self-test.sh
+# Run: bash .github/skills/automated-testing/self-test.sh
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$SCRIPT_DIR/../_common/detect-python.sh"
@@ -35,7 +35,7 @@ else
   PYTHON="python3"  # fallback for non-patchright tests
 fi
 
-# --- Test 2: pyserial 可导入 ---
+# --- Test 2: pyserial is importable ---
 if $PYTHON -c "import serial" 2>/dev/null; then
   echo "SELF_TEST_PASS: pyserial_import"
   PASS=$((PASS + 1))
@@ -43,7 +43,7 @@ else
   skip_case "pyserial_import" "pip install pyserial"
 fi
 
-# --- Test 3: 测试框架模拟 — 串口模式匹配 ---
+# --- Test 3: Test framework simulation — serial pattern matching ---
 test_case "test_framework_pattern_match" $PYTHON -c "
 import re
 class MockSerialTest:
@@ -67,10 +67,10 @@ t.test_pattern()
 assert len(t.results) == 2, f'Expected 2, got {len(t.results)}'
 "
 
-# --- Test 4: bash 测试流程逻辑 ---
+# --- Test 4: Bash test flow logic ---
 test_case "bash_test_flow" bash -c 'RESULT=0; [ $RESULT -eq 0 ]'
 
-# --- Test 5: 测试结果汇总逻辑 ---
+# --- Test 5: Test result aggregation logic ---
 test_case "result_aggregation" $PYTHON -c "
 results = [
     {'name': 'test1', 'passed': True},
@@ -82,7 +82,7 @@ failed = sum(1 for r in results if not r['passed'])
 assert passed == 2 and failed == 1, f'Aggregation error: {passed}/{failed}'
 "
 
-# --- 汇总 ---
+# --- Summary ---
 echo ""
 echo "Results: $PASS passed, $FAIL failed, $SKIP skipped"
 exit $FAIL

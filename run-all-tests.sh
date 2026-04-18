@@ -1,17 +1,17 @@
 #!/bin/bash
 # Run all skill self-tests
-# 运行: bash run-all-tests.sh [skill-name]
+# Usage: bash run-all-tests.sh [skill-name]
 #
-# 示例:
-#   bash run-all-tests.sh                    # 运行全部
-#   bash run-all-tests.sh tmux-multi-shell   # 运行指定 skill
+# Examples:
+#   bash run-all-tests.sh                    # Run all
+#   bash run-all-tests.sh tmux-multi-shell   # Run a specific skill
 
 set -o pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SKILLS_DIR="$SCRIPT_DIR/.github/skills"
 
-# 颜色
+# Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
@@ -36,14 +36,14 @@ run_skill_test() {
   echo -e "${CYAN}▶ Testing: $skill_name${NC}"
   local start_time=$SECONDS
 
-  # 运行并捕获输出
+  # Run and capture output
   local output
   output=$(bash "$script" 2>&1)
   local exit_code=$?
 
   local elapsed=$(( SECONDS - start_time ))
 
-  # 统计结果
+  # Count results
   local pass_count=$(echo "$output" | grep -c "SELF_TEST_PASS:")
   local fail_count=$(echo "$output" | grep -c "SELF_TEST_FAIL:")
   local skip_count=$(echo "$output" | grep -c "SELF_TEST_SKIP:")
@@ -52,7 +52,7 @@ run_skill_test() {
   TOTAL_FAIL=$((TOTAL_FAIL + fail_count))
   TOTAL_SKIP=$((TOTAL_SKIP + skip_count))
 
-  # 输出详情
+  # Print details
   echo "$output" | grep "SELF_TEST_" | while read line; do
     if echo "$line" | grep -q "PASS"; then
       echo -e "  ${GREEN}✅ $line${NC}"
@@ -63,7 +63,7 @@ run_skill_test() {
     fi
   done
 
-  # 状态
+  # Status
   if [ $fail_count -gt 0 ]; then
     echo -e "  ${RED}→ FAIL ($pass_count pass, $fail_count fail, $skip_count skip) [${elapsed}s]${NC}"
     SKILL_RESULTS+=("$skill_name|FAIL|$pass_count/$((pass_count+fail_count+skip_count))|${elapsed}s")
@@ -85,10 +85,10 @@ echo "========================================"
 echo ""
 
 if [ -n "$1" ]; then
-  # 单个 skill 测试
+  # Single skill test
   run_skill_test "$1"
 else
-  # 全量测试
+  # Run all tests
   for skill_dir in "$SKILLS_DIR"/*/; do
     skill_name=$(basename "$skill_dir")
     [ "$skill_name" = "_common" ] && continue
@@ -96,7 +96,7 @@ else
   done
 fi
 
-# === 汇总报告 ===
+# === Summary Report ===
 echo "========================================"
 echo "  Summary Report"
 echo "========================================"

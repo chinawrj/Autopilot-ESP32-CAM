@@ -1,6 +1,6 @@
 #!/bin/bash
 # self-test for cdp-web-inspector
-# 运行: bash .github/skills/cdp-web-inspector/self-test.sh
+# Run: bash .github/skills/cdp-web-inspector/self-test.sh
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$SCRIPT_DIR/../_common/detect-python.sh"
@@ -16,12 +16,12 @@ skip_case() { echo "SELF_TEST_SKIP: $1 ($2)"; SKIP=$((SKIP + 1)); }
 # --- Detect Python with patchright ---
 PYTHON=$(detect_python "patchright.sync_api")
 if [ -z "$PYTHON" ]; then
-  skip_case "patchright_import" "patchright 未找到，设置 PATCHRIGHT_PYTHON 或 pip install patchright"
+  skip_case "patchright_import" "patchright not found, set PATCHRIGHT_PYTHON or pip install patchright"
   echo ""; echo "Results: $PASS passed, $FAIL failed, $SKIP skipped"; exit $FAIL
 fi
 test_pass "patchright_import ($PYTHON)"
 
-# --- Test 2: chromium 驱动存在 ---
+# --- Test 2: chromium driver exists ---
 if ls ~/Library/Caches/ms-playwright/chromium-* &>/dev/null || \
    ls ~/.cache/ms-playwright/chromium-* &>/dev/null; then
   test_pass "chromium_driver"
@@ -29,7 +29,7 @@ else
   skip_case "chromium_driver" "patchright install chromium"
 fi
 
-# --- Test 3: 可见模式浏览器启动 + 页面操作 ---
+# --- Test 3: visible-mode browser launch + page interaction ---
 if $PYTHON -c "
 from patchright.sync_api import sync_playwright
 import os
@@ -37,7 +37,7 @@ pw = sync_playwright().start()
 ctx = pw.chromium.launch_persistent_context(
     user_data_dir=os.path.expanduser('~/.patchright-userdata/selftest'),
     channel='chrome',
-    headless=False,  # ⛔ 禁止 headless
+    headless=False,  # ⛔ headless is forbidden
     no_viewport=True,
 )
 page = ctx.pages[0] if ctx.pages else ctx.new_page()
@@ -60,7 +60,7 @@ pw = sync_playwright().start()
 ctx = pw.chromium.launch_persistent_context(
     user_data_dir=os.path.expanduser('~/.patchright-userdata/selftest'),
     channel='chrome',
-    headless=False,  # ⛔ 禁止 headless
+    headless=False,  # ⛔ headless is forbidden
     no_viewport=True,
 )
 page = ctx.pages[0] if ctx.pages else ctx.new_page()
@@ -75,7 +75,7 @@ else
   test_fail "js_evaluate"
 fi
 
-# --- 汇总 ---
+# --- Summary ---
 echo ""
 echo "Results: $PASS passed, $FAIL failed, $SKIP skipped"
 exit $FAIL

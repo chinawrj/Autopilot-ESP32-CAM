@@ -1,6 +1,6 @@
 #!/bin/bash
 # self-test for tmux-multi-shell
-# 运行: bash .github/skills/tmux-multi-shell/self-test.sh
+# Run: bash .github/skills/tmux-multi-shell/self-test.sh
 
 SESSION="__tmux_skill_test__"
 PASS=0
@@ -20,23 +20,23 @@ test_case() {
 cleanup() { tmux kill-session -t $SESSION 2>/dev/null; }
 trap cleanup EXIT
 
-# --- Test 1: tmux 已安装 ---
+# --- Test 1: tmux installed ---
 test_case "tmux_installed" command -v tmux
 
-# --- Test 2: 幂等会话创建（P0）---
+# --- Test 2: Idempotent session creation (P0) ---
 test_case "idempotent_session" bash -c '
   SESSION="__tmux_skill_test__"
   tmux kill-session -t $SESSION 2>/dev/null
-  # 首次创建
+  # First creation
   tmux has-session -t $SESSION 2>/dev/null || tmux new-session -d -s $SESSION
-  # 重复调用不报错
+  # Repeated call should not error
   tmux has-session -t $SESSION 2>/dev/null || tmux new-session -d -s $SESSION
-  # 验证只有一个
+  # Verify only one exists
   COUNT=$(tmux list-sessions -F "#{session_name}" | grep -c "^${SESSION}$")
   [ "$COUNT" = "1" ]
 '
 
-# --- Test 3: 多窗口创建与发送命令 ---
+# --- Test 3: Multi-window creation and command sending ---
 test_case "multi_window" bash -c '
   SESSION="__tmux_skill_test__"
   tmux new-window -t $SESSION -n win_test 2>/dev/null
@@ -45,7 +45,7 @@ test_case "multi_window" bash -c '
   tmux capture-pane -t $SESSION:win_test -p | grep -q hello_tmux_test
 '
 
-# --- Test 4: 命令完成等待 + 退出码检测（P0）---
+# --- Test 4: Command completion wait + exit code detection (P0) ---
 test_case "wait_and_exit_code" bash -c '
   SESSION="__tmux_skill_test__"
   SENTINEL="__DONE_TEST_$$__"
@@ -65,7 +65,7 @@ test_case "wait_and_exit_code" bash -c '
   exit 1
 '
 
-# --- Test 5: 失败命令退出码检测（P0）---
+# --- Test 5: Failed command exit code detection (P0) ---
 test_case "detect_failure_exit_code" bash -c '
   SESSION="__tmux_skill_test__"
   SENTINEL="__DONE_FAIL_$$__"
@@ -85,7 +85,7 @@ test_case "detect_failure_exit_code" bash -c '
   exit 1
 '
 
-# --- Test 6: 完整输出捕获（P0）---
+# --- Test 6: Full output capture (P0) ---
 test_case "full_output_capture" bash -c '
   SESSION="__tmux_skill_test__"
   tmux send-keys -t $SESSION:win_test "for i in \$(seq 1 200); do echo \"LINE_\$i\"; done" C-m
@@ -94,7 +94,7 @@ test_case "full_output_capture" bash -c '
   echo "$OUTPUT" | grep -q "LINE_1" && echo "$OUTPUT" | grep -q "LINE_200"
 '
 
-# --- Test 7: 超时中止（P1）---
+# --- Test 7: Timeout abort (P1) ---
 test_case "timeout_abort" bash -c '
   SESSION="__tmux_skill_test__"
   tmux send-keys -t $SESSION:win_test "sleep 60" C-m
@@ -106,7 +106,7 @@ test_case "timeout_abort" bash -c '
   tmux capture-pane -t $SESSION:win_test -p | grep -q __RECOVERED__
 '
 
-# --- Test 8: 并行命令协调（P1）---
+# --- Test 8: Parallel command coordination (P1) ---
 test_case "parallel_coordination" bash -c '
   SESSION="__tmux_skill_test__"
   tmux new-window -t $SESSION -n win_para 2>/dev/null
@@ -124,7 +124,7 @@ test_case "parallel_coordination" bash -c '
   [ $DONE1 -eq 1 ] && [ $DONE2 -eq 1 ]
 '
 
-# --- 汇总 ---
+# --- Summary ---
 echo ""
 echo "Results: $PASS passed, $FAIL failed"
 exit $FAIL

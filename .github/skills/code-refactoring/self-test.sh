@@ -1,6 +1,6 @@
 #!/bin/bash
 # self-test for code-refactoring
-# 运行: bash .github/skills/code-refactoring/self-test.sh
+# Run: bash .github/skills/code-refactoring/self-test.sh
 
 PASS=0
 FAIL=0
@@ -16,7 +16,7 @@ test_case() {
   fi
 }
 
-# --- Test 1: git 分支工作流 ---
+# --- Test 1: git branch workflow ---
 test_case "git_branch_workflow" bash -c '
   TMP_REPO=$(mktemp -d)
   cd "$TMP_REPO" && git init -q && \
@@ -30,12 +30,12 @@ test_case "git_branch_workflow" bash -c '
   exit $RC
 '
 
-# --- Test 2: 代码分析工具可用 ---
+# --- Test 2: code analysis tools available ---
 test_case "code_analysis_tools" bash -c '
   command -v grep &>/dev/null && command -v wc &>/dev/null && command -v sort &>/dev/null
 '
 
-# --- Test 3: TODO/FIXME 检测 ---
+# --- Test 3: TODO/FIXME detection ---
 test_case "todo_detection" bash -c '
   TMP_FILE=$(mktemp)
   cat > "$TMP_FILE" << EOF
@@ -49,7 +49,7 @@ EOF
   [ "$COUNT" -eq 3 ]
 '
 
-# --- Test 4: 长函数检测 ---
+# --- Test 4: long function detection ---
 test_case "long_function_detect" bash -c '
   TMP_SRC=$(mktemp)
   for i in $(seq 1 60); do echo "line $i;" >> "$TMP_SRC"; done
@@ -58,12 +58,12 @@ test_case "long_function_detect" bash -c '
   [ "$LINES" -gt 50 ]
 '
 
-# --- Test 5: 重构分支命名规范 ---
+# --- Test 5: refactoring branch naming convention ---
 test_case "branch_naming" bash -c '
   echo "refactor/extract-wifi-module" | grep -qE "^refactor/"
 '
 
-# --- 汇总 ---
+# --- Summary ---
 echo ""
 echo "Results: $PASS passed, $FAIL failed"
 exit $FAIL

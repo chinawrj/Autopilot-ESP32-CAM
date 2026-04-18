@@ -3,125 +3,125 @@ name: code-refactoring
 description: "Code refactoring strategy with trigger thresholds: compile warnings, file size, function length, duplicates. Use when: code quality review, refactoring day, reducing tech debt."
 ---
 
-# Skill: 代码重构策略
+# Skill: Code Refactoring Strategy
 
-## 用途
+## Purpose
 
-定义周期性代码重构的策略和流程，确保在持续开发中保持代码质量。
+Define a strategy and workflow for periodic code refactoring to maintain code quality during continuous development.
 
-**何时使用：**
-- 每 5 个迭代日进行一次计划重构
-- 发现代码异味（code smell）时
-- 功能完成后的清理阶段
-- 代码复杂度超过阈值时
+**When to use:**
+- Perform a planned refactoring every 5 iteration days
+- When code smells are discovered
+- During the cleanup phase after completing a feature
+- When code complexity exceeds thresholds
 
-**何时不使用：**
-- 项目初期原型阶段（先让功能跑起来）
-- 紧急 bug 修复中
-- 代码质量已经很好的模块
+**When not to use:**
+- Early prototyping phase (get the feature working first)
+- During an urgent bug fix
+- On modules that already have good code quality
 
-## 前置条件
+## Prerequisites
 
-- 所有当前测试通过（重构前必须有绿灯）
-- Git 工作区干净（无未提交的改动）
-- 已明确重构目标
+- All current tests pass (must have a green light before refactoring)
+- Git working tree is clean (no uncommitted changes)
+- Refactoring goals are clearly defined
 
-## 操作步骤
+## Steps
 
-### 1. 重构触发条件
+### 1. Refactoring Trigger Conditions
 
-每次重构前评估以下指标：
+Evaluate the following metrics before each refactoring:
 
-| 指标 | 阈值 | 检测方法 |
-|------|------|---------|
-| 函数行数 | > 50 行 | `wc -l` |
-| 文件行数 | > 500 行 | `wc -l` |
-| 重复代码 | > 3 处 | `grep` 搜索 |
-| TODO/FIXME | > 5 个 | `grep -rn "TODO\|FIXME"` |
-| 嵌套层级 | > 4 层 | 代码审查 |
-| 全局变量 | > 10 个 | `grep` 搜索 |
+| Metric | Threshold | Detection Method |
+|--------|-----------|-----------------|
+| Function line count | > 50 lines | `wc -l` |
+| File line count | > 500 lines | `wc -l` |
+| Duplicate code | > 3 occurrences | `grep` search |
+| TODO/FIXME | > 5 items | `grep -rn "TODO\|FIXME"` |
+| Nesting depth | > 4 levels | Code review |
+| Global variables | > 10 items | `grep` search |
 
-### 2. 重构检查清单
+### 2. Refactoring Checklist
 
 ```markdown
-## 重构清单 - Day N
+## Refactoring Checklist - Day N
 
-### 代码检查
-- [ ] 查找超长函数并拆分
-- [ ] 提取重复代码为公共函数
-- [ ] 消除魔术数字，定义常量
-- [ ] 检查命名一致性
-- [ ] 清理无用的 #include / import
-- [ ] 处理所有 TODO/FIXME
+### Code Review
+- [ ] Find and split overly long functions
+- [ ] Extract duplicate code into shared functions
+- [ ] Eliminate magic numbers by defining constants
+- [ ] Check naming consistency
+- [ ] Clean up unused #include / import statements
+- [ ] Address all TODO/FIXME items
 
-### 架构检查
-- [ ] 模块间依赖是否合理
-- [ ] 接口是否清晰（输入/输出明确）
-- [ ] 错误处理是否一致
-- [ ] 内存管理是否正确（嵌入式重点）
+### Architecture Review
+- [ ] Are inter-module dependencies reasonable?
+- [ ] Are interfaces clear (explicit inputs/outputs)?
+- [ ] Is error handling consistent?
+- [ ] Is memory management correct (critical for embedded)?
 
-### 文档检查
-- [ ] README 是否与代码同步
-- [ ] 关键函数是否有注释
-- [ ] 配置说明是否完整
+### Documentation Review
+- [ ] Is the README in sync with the code?
+- [ ] Are key functions commented?
+- [ ] Are configuration instructions complete?
 ```
 
-### 3. 安全重构流程
+### 3. Safe Refactoring Workflow
 
 ```bash
-# Step 1: 确保测试通过
-idf.py build && python test_serial.py && echo "绿灯 ✅"
+# Step 1: Ensure tests pass
+idf.py build && python test_serial.py && echo "Green light ✅"
 
-# Step 2: 创建重构分支
+# Step 2: Create a refactoring branch
 git checkout -b refactor/day-N-cleanup
 
-# Step 3: 执行重构（小步提交）
-# ... 代码修改 ...
-git add -A && git commit -m "refactor: 提取 WiFi 初始化为独立模块"
+# Step 3: Perform refactoring (small incremental commits)
+# ... code changes ...
+git add -A && git commit -m "refactor: extract WiFi init into standalone module"
 
-# ... 更多修改 ...
-git add -A && git commit -m "refactor: 消除 main.c 中的魔术数字"
+# ... more changes ...
+git add -A && git commit -m "refactor: eliminate magic numbers in main.c"
 
-# Step 4: 重构后验证
-idf.py build && python test_serial.py && echo "重构后仍然绿灯 ✅"
+# Step 4: Verify after refactoring
+idf.py build && python test_serial.py && echo "Still green after refactoring ✅"
 
-# Step 5: 合并
+# Step 5: Merge
 git checkout main && git merge refactor/day-N-cleanup
 ```
 
-### 4. ESP32/嵌入式特定重构
+### 4. ESP32/Embedded-Specific Refactoring
 
-#### 内存优化
+#### Memory Optimization
 ```c
-// Before: 栈上分配大缓冲区
+// Before: Large buffer allocated on the stack
 void handle_request() {
-    char buf[4096];  // 可能导致栈溢出
+    char buf[4096];  // May cause stack overflow
     // ...
 }
 
-// After: 使用堆分配或静态分配
-static char s_buf[4096];  // 或使用 malloc/free
+// After: Use heap allocation or static allocation
+static char s_buf[4096];  // Or use malloc/free
 void handle_request() {
-    // 使用 s_buf
+    // Use s_buf
 }
 ```
 
-#### 模块化
+#### Modularization
 ```
-// Before: 所有代码在 main.c
+// Before: All code in main.c
 main.c (800 lines)
 
-// After: 按功能拆分
-main.c          (50 lines)  - 入口和初始化调度
-wifi_manager.c  (150 lines) - WiFi 管理
-http_server.c   (200 lines) - HTTP 服务
-camera_ctrl.c   (150 lines) - 摄像头控制
-sensor_reader.c (100 lines) - 传感器读取
+// After: Split by functionality
+main.c          (50 lines)  - Entry point and init dispatch
+wifi_manager.c  (150 lines) - WiFi management
+http_server.c   (200 lines) - HTTP server
+camera_ctrl.c   (150 lines) - Camera control
+sensor_reader.c (100 lines) - Sensor reading
 ```
 
-#### 错误处理统一
+#### Unified Error Handling
 ```c
-// 定义统一的错误处理宏
+// Define a unified error handling macro
 #define CHECK_ESP_ERR(x, tag) do { \
     esp_err_t err = (x); \
     if (err != ESP_OK) { \
@@ -131,39 +131,39 @@ sensor_reader.c (100 lines) - 传感器读取
 } while(0)
 ```
 
-### 5. 重构报告
+### 5. Refactoring Report
 
-每次重构后生成报告：
+Generate a report after each refactoring:
 
 ```markdown
-## 重构报告 - Day N
+## Refactoring Report - Day N
 
-### 变更摘要
-- 拆分文件: main.c → 5 个模块文件
-- 消除重复: 3 处重复代码提取为公共函数
-- 清理: 移除 8 个 TODO，2 个未使用变量
+### Change Summary
+- Split files: main.c → 5 module files
+- Eliminated duplication: 3 duplicate code blocks extracted into shared functions
+- Cleanup: removed 8 TODOs, 2 unused variables
 
-### 代码指标变化
-| 指标 | 重构前 | 重构后 |
-|------|--------|--------|
-| 最大函数行数 | 120 | 45 |
-| 文件数 | 2 | 6 |
-| TODO 数量 | 12 | 4 |
+### Code Metric Changes
+| Metric | Before | After |
+|--------|--------|-------|
+| Max function line count | 120 | 45 |
+| Number of files | 2 | 6 |
+| TODO count | 12 | 4 |
 
-### 测试结果
-- 编译: ✅ 通过
-- 串口测试: ✅ 5/5 通过
-- Web UI 测试: ✅ 4/4 通过
+### Test Results
+- Build: ✅ Passed
+- Serial tests: ✅ 5/5 passed
+- Web UI tests: ✅ 4/4 passed
 ```
 
-## Self-Test（自检）
+## Self-Test
 
-> 验证重构工作流的工具和流程。
+> Verify the tools and workflow for the refactoring process.
 
-### 自检步骤
+### Self-Test Steps
 
 ```bash
-# Test 1: Git 可用且支持分支操作
+# Test 1: Git is available and supports branch operations
 TMP_REPO=$(mktemp -d)
 cd "$TMP_REPO" && git init -q && \
   echo "init" > file.txt && git add . && git commit -q -m "init" && \
@@ -173,11 +173,11 @@ cd "$TMP_REPO" && git init -q && \
   echo "SELF_TEST_PASS: git_branch_workflow" || echo "SELF_TEST_FAIL: git_branch_workflow"
 rm -rf "$TMP_REPO"
 
-# Test 2: 代码检查工具可用
+# Test 2: Code analysis tools are available
 command -v grep &>/dev/null && command -v wc &>/dev/null && \
   echo "SELF_TEST_PASS: code_analysis_tools" || echo "SELF_TEST_FAIL: code_analysis_tools"
 
-# Test 3: TODO/FIXME 检测逻辑
+# Test 3: TODO/FIXME detection logic
 TMP_FILE=$(mktemp)
 cat > "$TMP_FILE" << 'EOF'
 // TODO: fix this
@@ -189,7 +189,7 @@ COUNT=$(grep -c 'TODO\|FIXME' "$TMP_FILE")
 [ "$COUNT" -eq 3 ] && echo "SELF_TEST_PASS: todo_detection ($COUNT found)" || echo "SELF_TEST_FAIL: todo_detection (expected 3, got $COUNT)"
 rm "$TMP_FILE"
 
-# Test 4: 函数行数检测
+# Test 4: Long function detection
 TMP_SRC=$(mktemp --suffix=.c 2>/dev/null || mktemp)
 for i in $(seq 1 60); do echo "line $i;" >> "$TMP_SRC"; done
 LINES=$(wc -l < "$TMP_SRC")
@@ -197,35 +197,35 @@ LINES=$(wc -l < "$TMP_SRC")
 rm "$TMP_SRC"
 ```
 
-### Blind Test（盲测）
+### Blind Test
 
-**测试 Prompt:**
+**Test Prompt:**
 ```
-你是一个 AI 开发助手。请阅读此 Skill，然后对以下代码进行重构分析：
+You are an AI development assistant. Read this Skill, then perform a refactoring analysis on the following code:
 
 void handle_everything() {
-    // 60 行 WiFi 初始化代码
-    // 40 行 HTTP 服务器代码
-    // 30 行传感器读取代码
-    // 5 个 TODO 和 2 个 FIXME
-    // 3 处重复的错误处理代码
+    // 60 lines of WiFi initialization code
+    // 40 lines of HTTP server code
+    // 30 lines of sensor reading code
+    // 5 TODOs and 2 FIXMEs
+    // 3 duplicate error handling blocks
 }
 
-1. 识别所有重构触发条件（参考 Skill 中的阈值表）
-2. 提出具体的重构方案（拆分为哪几个模块）
-3. 生成重构报告模板
+1. Identify all refactoring trigger conditions (refer to the threshold table in the Skill)
+2. Propose a concrete refactoring plan (which modules to split into)
+3. Generate a refactoring report template
 ```
 
-**验收标准:**
-- [ ] Agent 识别了函数超长（130行 > 50行阈值）
-- [ ] Agent 识别了 TODO/FIXME 超标（7 > 5）
-- [ ] Agent 识别了重复代码
-- [ ] Agent 提出了拆分为 wifi_manager, http_server, sensor_reader 的方案
-- [ ] Agent 生成了符合 Skill 格式的重构报告
+**Acceptance Criteria:**
+- [ ] Agent identified the function is too long (130 lines > 50-line threshold)
+- [ ] Agent identified TODO/FIXME count exceeds threshold (7 > 5)
+- [ ] Agent identified duplicate code
+- [ ] Agent proposed splitting into wifi_manager, http_server, sensor_reader
+- [ ] Agent generated a refactoring report matching the Skill format
 
-## 成功标准
+## Success Criteria
 
-- [ ] 重构前后所有测试保持通过
-- [ ] 代码指标有明显改善
-- [ ] Git 历史清晰，每次重构小步提交
-- [ ] 重构报告已生成
+- [ ] All tests remain passing before and after refactoring
+- [ ] Code metrics show clear improvement
+- [ ] Git history is clean with small incremental commits per refactoring step
+- [ ] Refactoring report has been generated

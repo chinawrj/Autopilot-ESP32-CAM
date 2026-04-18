@@ -1,6 +1,6 @@
 #!/bin/bash
 # self-test for project-scaffolding
-# 运行: bash .github/skills/project-scaffolding/self-test.sh
+# Run: bash .github/skills/project-scaffolding/self-test.sh
 
 PASS=0
 FAIL=0
@@ -16,18 +16,18 @@ test_case() {
   fi
 }
 
-# --- Test 1: 标准目录结构创建 ---
+# --- Test 1: Standard directory structure creation ---
 test_case "directory_structure" bash -c '
   TMP=$(mktemp -d)
   PROJECT="$TMP/test-project"
   DIRS="main components frontend tools tests docs/daily-logs"
   for d in $DIRS; do mkdir -p "$PROJECT/$d"; done
-  # 验证所有目录存在
+  # Verify all directories exist
   for d in $DIRS; do [ -d "$PROJECT/$d" ] || exit 1; done
   rm -rf "$TMP"
 '
 
-# --- Test 2: CMakeLists.txt 生成 ---
+# --- Test 2: CMakeLists.txt generation ---
 test_case "cmake_generation" bash -c '
   TMP=$(mktemp -d)
   PROJECT="$TMP/myproj"
@@ -41,7 +41,7 @@ EOF
   RC=$?; rm -rf "$TMP"; exit $RC
 '
 
-# --- Test 3: HTML 模板生成 ---
+# --- Test 3: HTML template generation ---
 test_case "html_template" bash -c '
   TMP=$(mktemp -d)
   cat > "$TMP/index.html" << EOF
@@ -56,7 +56,7 @@ EOF
   RC=$?; rm -rf "$TMP"; exit $RC
 '
 
-# --- Test 4: .gitignore 内容 ---
+# --- Test 4: .gitignore content ---
 test_case "gitignore_content" bash -c '
   TMP=$(mktemp)
   cat > "$TMP" << EOF
@@ -70,18 +70,18 @@ EOF
   RC=$?; rm "$TMP"; exit $RC
 '
 
-# --- Test 5: 完整脚手架端到端 ---
+# --- Test 5: Full scaffolding end-to-end ---
 test_case "scaffold_e2e" bash -c '
   TMP=$(mktemp -d)
   PROJECT="$TMP/e2e-proj"
-  # 模拟完整脚手架生成
+  # Simulate full scaffolding generation
   mkdir -p "$PROJECT"/{main,components,frontend,tools,tests,docs/daily-logs}
   echo "cmake_minimum_required(VERSION 3.16)" > "$PROJECT/CMakeLists.txt"
   echo "idf_component_register(SRCS \"main.c\")" > "$PROJECT/main/CMakeLists.txt"
   echo "void app_main(void) {}" > "$PROJECT/main/main.c"
   echo "# E2E Project" > "$PROJECT/README.md"
   echo "build/" > "$PROJECT/.gitignore"
-  # 验证
+  # Verify
   [ -f "$PROJECT/CMakeLists.txt" ] && \
   [ -f "$PROJECT/main/main.c" ] && \
   [ -f "$PROJECT/README.md" ] && \
@@ -90,7 +90,7 @@ test_case "scaffold_e2e" bash -c '
   RC=$?; rm -rf "$TMP"; exit $RC
 '
 
-# --- 汇总 ---
+# --- Summary ---
 echo ""
 echo "Results: $PASS passed, $FAIL failed"
 exit $FAIL

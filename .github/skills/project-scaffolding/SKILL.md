@@ -3,70 +3,70 @@ name: project-scaffolding
 description: "Project scaffolding generator: directory structure, CMakeLists.txt, HTML templates. Use when: creating new ESP32 project, generating boilerplate, initializing project structure."
 ---
 
-# Skill: 项目脚手架生成
+# Skill: Project Scaffolding Generator
 
-## 用途
+## Purpose
 
-为目标项目生成初始目录结构、构建配置文件（CMakeLists.txt）、HTML 模板和基础源码框架。这是项目开发的第一步实际编码工作。
+Generate initial directory structure, build configuration files (CMakeLists.txt), HTML templates, and basic source code framework for the target project. This is the first hands-on coding step in project development.
 
-**何时使用：**
-- 项目从零开始，需要初始化目录和文件
-- 需要标准的 ESP-IDF 项目结构
-- 需要一个可编译的 "Hello World" 起点
+**When to use:**
+- Project starts from scratch and needs directory and file initialization
+- Need a standard ESP-IDF project structure
+- Need a compilable "Hello World" starting point
 
-**何时不使用：**
-- 项目已有代码结构
-- 基于已有模板/示例项目开发
+**When not to use:**
+- Project already has a code structure
+- Developing based on an existing template/example project
 
-## 前置条件
+## Prerequisites
 
-- 开发环境已通过 `environment-setup` skill 验证
-- ESP-IDF 环境已加载
-- 已确定目标芯片型号
+- Development environment verified via `environment-setup` skill
+- ESP-IDF environment loaded
+- Target chip model determined
 
-## 操作步骤
+## Steps
 
-### 1. ESP-IDF 项目标准结构
+### 1. ESP-IDF Project Standard Structure
 
 ```
 {{PROJECT_NAME}}/
-├── CMakeLists.txt              # 顶层构建文件
-├── sdkconfig.defaults          # 默认配置
-├── partitions.csv              # 分区表（大项目需要）
+├── CMakeLists.txt              # Top-level build file
+├── sdkconfig.defaults          # Default configuration
+├── partitions.csv              # Partition table (needed for large projects)
 ├── main/
-│   ├── CMakeLists.txt          # main 组件构建文件
-│   ├── main.c                  # 入口文件
-│   ├── wifi_manager.c          # WiFi 管理
+│   ├── CMakeLists.txt          # main component build file
+│   ├── main.c                  # Entry file
+│   ├── wifi_manager.c          # WiFi manager
 │   ├── wifi_manager.h
-│   ├── http_server.c           # HTTP 服务器
+│   ├── http_server.c           # HTTP server
 │   ├── http_server.h
-│   └── Kconfig.projbuild       # menuconfig 自定义项
-├── components/                  # 自定义组件
+│   └── Kconfig.projbuild       # menuconfig custom options
+├── components/                  # Custom components
 │   └── virtual_sensor/
 │       ├── CMakeLists.txt
 │       ├── virtual_sensor.c
 │       └── include/
 │           └── virtual_sensor.h
-├── frontend/                    # Web 前端资源
+├── frontend/                    # Web frontend resources
 │   ├── index.html
 │   ├── style.css
 │   └── app.js
-├── tools/                       # 开发辅助工具
+├── tools/                       # Development utilities
 │   ├── start-browser.py
 │   └── check-env.sh
-├── tests/                       # 测试脚本
+├── tests/                       # Test scripts
 │   ├── test_serial.py
 │   └── test_web_ui.py
 └── docs/
-    └── daily-logs/             # 每日工作日志
+    └── daily-logs/             # Daily work logs
 ```
 
-### 2. 顶层 CMakeLists.txt
+### 2. Top-Level CMakeLists.txt
 
 ```cmake
 cmake_minimum_required(VERSION 3.16)
 
-# 包含 ESP-IDF 构建系统
+# Include ESP-IDF build system
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 
 project({{PROJECT_NAME}})
@@ -82,11 +82,11 @@ idf_component_register(
     PRIV_REQUIRES virtual_sensor
 )
 
-# 嵌入前端文件到固件
+# Embed frontend files into firmware
 spiffs_create_partition_image(storage ../frontend FLASH_IN_PROJECT)
 ```
 
-### 4. 最小可运行的 main.c
+### 4. Minimal Runnable main.c
 
 ```c
 #include <stdio.h>
@@ -103,7 +103,7 @@ void app_main(void)
 {
     ESP_LOGI(TAG, "Starting {{PROJECT_NAME}}...");
 
-    // 初始化 NVS
+    // Initialize NVS
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK(nvs_flash_erase());
@@ -111,17 +111,17 @@ void app_main(void)
     }
     ESP_ERROR_CHECK(ret);
 
-    // 初始化 WiFi
+    // Initialize WiFi
     wifi_init_sta();
 
-    // 启动 HTTP 服务器
+    // Start HTTP server
     start_webserver();
 
     ESP_LOGI(TAG, "{{PROJECT_NAME}} started successfully");
 }
 ```
 
-### 5. 基础 HTML 模板
+### 5. Basic HTML Template
 
 ```html
 <!DOCTYPE html>
@@ -167,28 +167,28 @@ void app_main(void)
 </html>
 ```
 
-### 6. 生成脚手架命令
+### 6. Scaffolding Generation Commands
 
 ```bash
-# 创建项目目录
+# Create project directories
 mkdir -p {{PROJECT_NAME}}/{main,components/virtual_sensor/include,frontend,tools,tests,docs/daily-logs}
 
-# 设置目标芯片
+# Set target chip
 cd {{PROJECT_NAME}}
 idf.py set-target esp32
 
-# 首次编译验证
+# Initial build verification
 idf.py build
 ```
 
-## Self-Test（自检）
+## Self-Test
 
-> 验证脚手架生成的项目结构能正确编译。
+> Verify that the scaffolded project structure compiles correctly.
 
-### 自检步骤
+### Self-Test Steps
 
 ```bash
-# Test 1: 目录结构完整性
+# Test 1: Directory structure completeness
 DIRS="main components frontend tools tests docs/daily-logs"
 ALL_OK=true
 for d in $DIRS; do
@@ -196,34 +196,35 @@ for d in $DIRS; do
 done
 $ALL_OK && echo "SELF_TEST_PASS: directory_structure"
 
-# Test 2: CMakeLists.txt 语法检查
+# Test 2: CMakeLists.txt syntax check
 grep -q "project({{PROJECT_NAME}})" {{PROJECT_NAME}}/CMakeLists.txt && \
     echo "SELF_TEST_PASS: cmake_syntax" || echo "SELF_TEST_FAIL: cmake_syntax"
 
-# Test 3: 编译通过（需要 ESP-IDF 环境）
+# Test 3: Build passes (requires ESP-IDF environment)
 cd {{PROJECT_NAME}} && idf.py build 2>&1 | tail -5
 [ ${PIPESTATUS[0]} -eq 0 ] && echo "SELF_TEST_PASS: build" || echo "SELF_TEST_FAIL: build"
 ```
 
-### Blind Test（盲测）
+### Blind Test
 
-**测试 Prompt:**
+**Test Prompt:**
 ```
-你是一个 AI 开发助手。请阅读此 Skill，然后为一个名为 "test-project" 的
-ESP32 项目生成完整的脚手架。项目需要 WiFi 连接和一个简单的 HTTP 服务器。
-生成所有必需文件后，执行 idf.py build 验证可编译。
+You are an AI development assistant. Please read this Skill, then generate
+a complete scaffolding for an ESP32 project named "test-project".
+The project needs WiFi connectivity and a simple HTTP server.
+After generating all required files, run idf.py build to verify it compiles.
 ```
 
-**验收标准:**
-- [ ] Agent 生成了所有必需的目录和文件
-- [ ] CMakeLists.txt 结构正确
-- [ ] main.c 包含基本的初始化流程
-- [ ] HTML 模板包含必要的 UI 元素
-- [ ] 首次编译成功（或错误仅因缺少硬件组件）
+**Acceptance Criteria:**
+- [ ] Agent generates all required directories and files
+- [ ] CMakeLists.txt structure is correct
+- [ ] main.c includes basic initialization flow
+- [ ] HTML template contains necessary UI elements
+- [ ] Initial build succeeds (or errors are only due to missing hardware components)
 
-## 成功标准
+## Success Criteria
 
-- [ ] 项目目录结构完整
-- [ ] `idf.py build` 编译通过（或仅有可预期的组件缺失警告）
-- [ ] HTML 页面在浏览器中可渲染
-- [ ] 所有源文件的 include/import 路径正确
+- [ ] Project directory structure is complete
+- [ ] `idf.py build` compiles successfully (or only has expected component-missing warnings)
+- [ ] HTML page renders correctly in the browser
+- [ ] All source files have correct include/import paths

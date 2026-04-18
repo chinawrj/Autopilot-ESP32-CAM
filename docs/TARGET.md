@@ -1,413 +1,413 @@
-# Autopilot ESP32-CAM — 项目目标与进度跟踪
+# Autopilot ESP32-CAM — Project Goals & Progress Tracking
 
-## 总体目标
+## Overall Goal
 
-在 YD-ESP32-CAM (ESP32-WROVER-E-N8R8) 上构建一个完整的 **实时摄像头 Web 服务器**，
-支持 TCP/UDP 双路径视频流、实时 HUD 显示、LED 控制。
+Build a complete **real-time camera web server** on the YD-ESP32-CAM (ESP32-WROVER-E-N8R8),
+supporting dual-path TCP/UDP video streaming, real-time HUD overlay, and LED control.
 
-## 里程碑进度
+## Milestone Progress
 
-### M0: 项目脚手架 ✅ Complete
-> **目标日**: Day 1 | **完成日**: Day 1
+### M0: Project Scaffold ✅ Complete
+> **Target**: Day 1 | **Completed**: Day 1
 
-- [x] ESP-IDF 项目结构搭建 (CMakeLists.txt, 分区表)
-- [x] sdkconfig.defaults (PSRAM, 摄像头, WiFi 基础配置)
-- [x] WiFi 管理模块 (wifi_manager.c/h)
-  - [x] 从 Kconfig 读取 SSID/Password
-  - [x] STA 模式连接
-  - [x] 自动重连 (最大重试 5 次)
-  - [x] 事件回调 (连接/断开/获取 IP)
-- [x] tools/provision-wifi.sh (凭据注入)
-- [x] 编译通过
-- [x] 烧录成功 + 串口看到 WiFi 连接日志 + 获取 IP (Day 6 验证: IP 192.168.1.171)
-- [x] Git: 初始提交
+- [x] ESP-IDF project structure (CMakeLists.txt, partition table)
+- [x] sdkconfig.defaults (PSRAM, camera, WiFi base config)
+- [x] WiFi management module (wifi_manager.c/h)
+  - [x] Read SSID/Password from Kconfig
+  - [x] STA mode connection
+  - [x] Auto-reconnect (max 5 retries)
+  - [x] Event callbacks (connect/disconnect/got IP)
+- [x] tools/provision-wifi.sh (credential injection)
+- [x] Build passed
+- [x] Flash successful + serial shows WiFi connection log + got IP (Day 6 verified: IP 192.168.1.171)
+- [x] Git: initial commit
 
-**完成标志**: ✅ 串口输出 `WiFi connected, IP: 192.168.1.171` (Day 6 硬件验证通过)
+**Completion criteria**: ✅ Serial output `WiFi connected, IP: 192.168.1.171` (Day 6 hardware verified)
 
 ---
 
-### M1: 基础 TCP 视频流 ✅ Complete
-> **目标日**: Day 2-3 | **完成日**: Day 3
+### M1: Basic TCP Video Stream ✅ Complete
+> **Target**: Day 2-3 | **Completed**: Day 3
 
-- [x] OV2640 摄像头初始化 (camera_init.c)
-  - [x] PSRAM 帧缓冲
-  - [x] 分辨率: VGA (640x480)
-  - [x] JPEG 质量: 12
-- [x] HTTP 服务器 (http_server.c)
-  - [x] GET `/` → 主页 (index.html)
-  - [x] GET `/stream/tcp` → MJPEG 流
+- [x] OV2640 camera initialization (camera_init.c)
+  - [x] PSRAM frame buffer
+  - [x] Resolution: VGA (640x480)
+  - [x] JPEG quality: 12
+- [x] HTTP server (http_server.c)
+  - [x] GET `/` → homepage (index.html)
+  - [x] GET `/stream/tcp` → MJPEG stream
   - [x] MJPEG: multipart/x-mixed-replace boundary
-- [x] 前端页面 (main/index.html)
-  - [x] `<img>` 标签指向 `/stream/tcp`
-  - [x] 基本布局和样式
-- [x] 浏览器验证: MJPEG 流正常，~14KB/帧，FPS ~6.3 (Day 6 curl 验证)
+- [x] Frontend page (main/index.html)
+  - [x] `<img>` tag pointing to `/stream/tcp`
+  - [x] Basic layout and styling
+- [x] Browser verified: MJPEG stream working, ~14KB/frame, FPS ~6.3 (Day 6 curl verified)
 
-**完成标志**: ✅ `http://192.168.1.171/stream/tcp` MJPEG 流工作正常 (Day 6 硬件验证通过)
+**Completion criteria**: ✅ `http://192.168.1.171/stream/tcp` MJPEG stream working (Day 6 hardware verified)
 
 ---
 
-### M2: HUD 叠加显示 ✅ Complete
-> **目标日**: Day 4-5 | **完成日**: Day 5
+### M2: HUD Overlay ✅ Complete
+> **Target**: Day 4-5 | **Completed**: Day 5
 
-- [x] FPS 实时计算 (在服务器端统计帧率)
-- [x] 虚拟温度传感器组件 (components/virtual_sensor/)
-  - [x] 基准 25°C，±3°C 随机波动
-  - [x] 更新频率 1 Hz
+- [x] Real-time FPS calculation (server-side frame rate tracking)
+- [x] Virtual temperature sensor component (components/virtual_sensor/)
+  - [x] Baseline 25°C, ±3°C random fluctuation
+  - [x] Update frequency 1 Hz
 - [x] REST API
   - [x] GET `/api/status` → JSON {fps, temperature, led_state}
-- [x] 前端 HUD
-  - [x] JavaScript 轮询 `/api/status` (每秒)
-  - [x] 叠加 FPS 和温度到视频流上方
-  - [x] 样式: 半透明黑底白字
+- [x] Frontend HUD
+  - [x] JavaScript polling `/api/status` (every second)
+  - [x] FPS and temperature overlay on top of video stream
+  - [x] Style: semi-transparent black background with white text
 
-**完成标志**: ✅ /api/status → fps=6.3, temp=27.3°C, led_state (Day 6 硬件验证通过)
+**Completion criteria**: ✅ /api/status → fps=6.3, temp=27.3°C, led_state (Day 6 hardware verified)
 
 ---
 
-### M3: LED 控制 ✅ Complete
-> **目标日**: Day 6 | **完成日**: Day 4 (提前完成)
+### M3: LED Control ✅ Complete
+> **Target**: Day 6 | **Completed**: Day 4 (ahead of schedule)
 
-- [x] GPIO33 LED 驱动 (led_controller.c)
-  - [x] 初始化为输出, 默认关闭
-  - [x] on/off/toggle 接口
+- [x] GPIO33 LED driver (led_controller.c)
+  - [x] Initialize as output, default off
+  - [x] on/off/toggle interface
 - [x] REST API
   - [x] POST `/api/led` body: {"state": "on"/"off"/"toggle"}
-  - [x] 返回当前状态 JSON
-- [x] 前端按钮
-  - [x] Toggle 按钮，显示当前状态 (🔴 OFF / 🟢 ON)
-  - [x] 点击发送 POST 请求
-  - [x] 实时同步状态
-- [x] 硬件验证: LED on/off/toggle 全部工作 (Day 6 curl 验证)
+  - [x] Returns current state JSON
+- [x] Frontend button
+  - [x] Toggle button showing current state (🔴 OFF / 🟢 ON)
+  - [x] Click sends POST request
+  - [x] Real-time state sync
+- [x] Hardware verified: LED on/off/toggle all working (Day 6 curl verified)
 
-**完成标志**: 点击网页按钮，ESP32-CAM 板载 LED 亮/灭 (待硬件验证)
-
----
-
-### M4: UDP 视频流 ✅ Complete
-> **目标日**: Day 7-9 | **完成日**: Day 8
-
-- [ ] UDP 推送端 (udp_stream.c)
-  - [ ] JPEG 帧分片 (MTU 1400)
-  - [ ] 序列号 + 帧号头
-  - [ ] 丢帧容忍
-- [x] WebSocket 视频流通道 (ws_stream.c)
-  - [x] WebSocket binary frame 推送 JPEG (Day 7 实现)
-  - [x] 最多 4 客户端并发
-  - [x] httpd close callback 自动清理
-  - [x] 控制消息: start/stop/quality (Day 8: set_quality, set_resolution, get_status)
-  - [x] 心跳机制 (Day 8: 5s periodic heartbeat with fps/clients/heap)
-- [x] 前端 `/stream/ws` 页面 (Day 7)
-  - [x] WebSocket 连接管理 + 自动重连
-  - [x] Canvas 渲染 (Blob → Image → drawImage)
-  - [x] HUD 叠加: FPS + 温度 + WS 状态
-  - [x] LED 控制按钮
-- [x] TCP 和 WS 双路径并存不冲突 (Day 7 验证通过)
-
-**完成标志**: `/stream/tcp` 和 `/stream/ws` 都可独立访问 — ✅ Day 7 验证通过
+**Completion criteria**: Click web button, ESP32-CAM onboard LED turns on/off (pending hardware verification)
 
 ---
 
-### M5: 稳定性与优化 ✅ Complete
-> **目标日**: Day 10-12 | **完成日**: Day 11
+### M4: UDP Video Stream ✅ Complete
+> **Target**: Day 7-9 | **Completed**: Day 8
 
-- [x] 内存使用分析 (`heap_caps_get_info`) — Day 9: heap ~4.1MB free
-- [x] 内存泄漏检测 (5min连续运行, heap drift +383 bytes/min, 无泄漏)
-- [x] WiFi 断线重连测试 — Day 11: debug endpoint + 4/4 reconnect 全部成功 (~2s 恢复)
-- [x] 多客户端并发测试 (3 WS + 1 MJPEG, 60s, 0 errors)
-- [x] PSRAM 分配优化 — Day 10: 评估无需优化 (4MB+ free, 摄像头仅用 120KB)
-- [x] 24 小时连续运行测试 — Day 10: 已启动后台监控 (heap_monitor.py 1440 min)
-- [x] 代码重构 — Day 10: send_heartbeat(); Day 11: http_server.c 260→216 行
-- [x] README.md 最终版本 — Day 10: 完成
+- [ ] UDP push module (udp_stream.c)
+  - [ ] JPEG frame fragmentation (MTU 1400)
+  - [ ] Sequence number + frame number header
+  - [ ] Frame drop tolerance
+- [x] WebSocket video stream channel (ws_stream.c)
+  - [x] WebSocket binary frame JPEG push (Day 7 implemented)
+  - [x] Up to 4 concurrent clients
+  - [x] httpd close callback auto-cleanup
+  - [x] Control messages: start/stop/quality (Day 8: set_quality, set_resolution, get_status)
+  - [x] Heartbeat mechanism (Day 8: 5s periodic heartbeat with fps/clients/heap)
+- [x] Frontend `/stream/ws` page (Day 7)
+  - [x] WebSocket connection management + auto-reconnect
+  - [x] Canvas rendering (Blob → Image → drawImage)
+  - [x] HUD overlay: FPS + temperature + WS status
+  - [x] LED control button
+- [x] TCP and WS dual paths coexist without conflict (Day 7 verified)
 
-**完成标志**: ✅ 多客户端 0 错误 + WiFi 重连 4/4 + heap 稳定 + 代码审查通过 (Day 11)
+**Completion criteria**: `/stream/tcp` and `/stream/ws` both independently accessible — ✅ Day 7 verified
 
 ---
 
-### Release: 发布准备 ✅ Complete
-> **目标日**: Day 12-13 | **完成日**: Day 12
+### M5: Stability & Optimization ✅ Complete
+> **Target**: Day 10-12 | **Completed**: Day 11
 
-- [x] Web UI 截图 (4 张: MJPEG / WebSocket / LED / API)
-- [x] 双语 README (README.md 英文 + README_CN.md 中文)
+- [x] Memory usage analysis (`heap_caps_get_info`) — Day 9: heap ~4.1MB free
+- [x] Memory leak detection (5min continuous run, heap drift +383 bytes/min, no leak)
+- [x] WiFi disconnect/reconnect test — Day 11: debug endpoint + 4/4 reconnects successful (~2s recovery)
+- [x] Multi-client concurrent test (3 WS + 1 MJPEG, 60s, 0 errors)
+- [x] PSRAM allocation optimization — Day 10: evaluated, no optimization needed (4MB+ free, camera only uses 120KB)
+- [x] 24-hour continuous run test — Day 10: started background monitoring (heap_monitor.py 1440 min)
+- [x] Code refactoring — Day 10: send_heartbeat(); Day 11: http_server.c 260→216 lines
+- [x] README.md final version — Day 10: completed
+
+**Completion criteria**: ✅ Multi-client 0 errors + WiFi reconnect 4/4 + heap stable + code review passed (Day 11)
+
+---
+
+### Release: Release Preparation ✅ Complete
+> **Target**: Day 12-13 | **Completed**: Day 12
+
+- [x] Web UI screenshots (4 images: MJPEG / WebSocket / LED / API)
+- [x] Bilingual README (README.md English + README_CN.md Chinese)
 - [x] CHANGELOG.md (v1.0.0 release notes)
-- [x] 架构图 (Mermaid, 嵌入 README)
-- [x] 截图工具 (tools/take_screenshots.py)
-- [x] GitHub Release 创建 (Day 13)
+- [x] Architecture diagram (Mermaid, embedded in README)
+- [x] Screenshot tool (tools/take_screenshots.py)
+- [x] GitHub Release created (Day 13)
 
-**完成标志**: ✅ GitHub Release v1.0.0 发布 + README 渲染验证通过 (Day 13)
+**Completion criteria**: ✅ GitHub Release v1.0.0 published + README rendering verified (Day 13)
 
 ---
 
-## 当前状态
+## Current Status
 
-| 里程碑 | 状态 | 进度 |
-|--------|------|------|
-| M0 脚手架 | ✅ | 100% |
-| M1 TCP流 | ✅ | 100% |
+| Milestone | Status | Progress |
+|-----------|--------|----------|
+| M0 Scaffold | ✅ | 100% |
+| M1 TCP Stream | ✅ | 100% |
 | M2 HUD | ✅ | 100% |
 | M3 LED | ✅ | 100% |
-| M4 WS流 | ✅ | 100% |
-| M5 稳定性 | ✅ | 100% |
+| M4 WS Stream | ✅ | 100% |
+| M5 Stability | ✅ | 100% |
 | Release v1.0.0 | ✅ | 100% |
-| M6 v1.1.0 新功能 | ✅ | 100% |
+| M6 v1.1.0 New Features | ✅ | 100% |
 | Release v1.1.1 | ✅ | 100% |
 | Release v1.2.0 | ✅ | 100% |
 | Release v1.3.0 | ✅ | 100% |
 | Release v1.4.0 | ✅ | 100% |
 
-**当前工作日**: Day 30
-**当前固件版本**: v1.4.0
-**状态**: Day 30 — JS 提取 + API 速率限制 (代码健康 + 安全加固)
+**Current work day**: Day 30
+**Current firmware version**: v1.4.0
+**Status**: Day 30 — JS extraction + API rate limiting (code health + security hardening)
 
 ---
 
-## v1.1.0 Release 计划（Day 15-18）
+## v1.1.0 Release Plan (Day 15-18)
 
-### M6: v1.1.0 新功能
-> **目标日**: Day 15-18 | **发布日**: Day 18
+### M6: v1.1.0 New Features
+> **Target**: Day 15-18 | **Released**: Day 18
 
-#### Day 15: 文档更新 + 规划
-- [x] README 添加 AI 开发者信息（Claude Opus 4.6）
-- [x] v1.1.0 roadmap 规划
+#### Day 15: Documentation Update + Planning
+- [x] README: add AI developer info (Claude Opus 4.6)
+- [x] v1.1.0 roadmap planning
 
-#### Day 16: OTA 固件升级
-- [x] OTA 升级模块 (ota_update.c/h)
-  - [x] HTTP OTA: 从 URL 下载固件并升级
-  - [x] 版本号管理 (app_desc)
-  - [x] 回滚保护 (rollback — 双 OTA 分区)
-- [x] REST API: `POST /api/ota` 触发升级
-- [x] REST API: `GET /api/ota/status` 进度查询
-- [x] 前端: OTA 升级面板 (URL输入 + 进度条 + 版本显示)
-- [x] 分区表调整: 双 OTA 分区 (ota_0 + ota_1, 3MB each)
-- [x] 修复: 摄像头 PWDN 上电时序 (OTA 重启后 I2C 超时)
-- [x] E2E 测试: 下载→烧写→重启→摄像头OK→HTTP OK
+#### Day 16: OTA Firmware Upgrade
+- [x] OTA upgrade module (ota_update.c/h)
+  - [x] HTTP OTA: download firmware from URL and upgrade
+  - [x] Version management (app_desc)
+  - [x] Rollback protection (dual OTA partition)
+- [x] REST API: `POST /api/ota` trigger upgrade
+- [x] REST API: `GET /api/ota/status` progress query
+- [x] Frontend: OTA upgrade panel (URL input + progress bar + version display)
+- [x] Partition table adjustment: dual OTA partitions (ota_0 + ota_1, 3MB each)
+- [x] Fix: camera PWDN power-up timing (I2C timeout after OTA reboot)
+- [x] E2E test: download → flash → reboot → camera OK → HTTP OK
 
-#### Day 17: 快照拍照 + Web UI 优化
-- [x] REST API: `GET /api/snapshot` 返回单帧 JPEG
-- [x] 前端: 拍照按钮 + 图片下载
-- [x] 首页合并: 统一入口页面（TCP/WS 切换 + 所有控制面板）
-- [x] 系统信息面板: 固件版本、运行时间、内存状态、WiFi 信号
-- [x] 修复: MJPEG 流阻塞 API — 拆分双服务器架构 (port 80 + 81)
-- [x] WiFi RSSI 函数 + `/api/status` 增强
+#### Day 17: Snapshot Capture + Web UI Optimization
+- [x] REST API: `GET /api/snapshot` returns single JPEG frame
+- [x] Frontend: capture button + image download
+- [x] Homepage merge: unified entry page (TCP/WS switching + all control panels)
+- [x] System info panel: firmware version, uptime, memory status, WiFi signal
+- [x] Fix: MJPEG stream blocking API — split into dual-server architecture (port 80 + 81)
+- [x] WiFi RSSI function + `/api/status` enhancement
 
-#### Day 18: 测试 + 发布 v1.1.0
-- [x] 全功能回归测试 (所有端点) — curl 9/10 + browser 17/18
-- [x] OTA 升级端到端测试 — 修复 camera I2C reboot 问题
-- [x] 稳定性验证 (多客户端 + WiFi 重连) — 300s 0 errors + 3/3 reconnect
-- [x] CHANGELOG 更新
+#### Day 18: Testing + Release v1.1.0
+- [x] Full feature regression test (all endpoints) — curl 9/10 + browser 17/18
+- [x] OTA end-to-end test — fixed camera I2C reboot issue
+- [x] Stability verification (multi-client + WiFi reconnect) — 300s 0 errors + 3/3 reconnect
+- [x] CHANGELOG update
 - [x] GitHub Release v1.1.0
 
-#### Day 19: 质量审计
-- [x] 全面 API 端点测试 (curl) — 80/80 通过
-- [x] 浏览器 UI 验证 (Patchright Chrome) — 50/50 通过
-- [x] 修复: MJPEG stream port 81 → 8081 (网络代理兼容性)
-- [x] 代码/文档端口引用全部更新
+#### Day 19: Quality Audit
+- [x] Full API endpoint test (curl) — 80/80 passed
+- [x] Browser UI verification (Patchright Chrome) — 50/50 passed
+- [x] Fix: MJPEG stream port 81 → 8081 (network proxy compatibility)
+- [x] All code/docs port references updated
 
-#### Day 20: v1.1.1 文档刷新 + 补丁发布
-- [x] README.md / README_CN.md 全面更新
-  - [x] 架构图: 单服务器 → 双服务器 (:80 + :8081)
-  - [x] 功能表: 增加 OTA、快照、统一仪表盘、系统信息
-  - [x] API 参考: 增加 /api/snapshot、/api/ota、/api/ota/status
-  - [x] 项目结构: 增加 stream_server.c/h、ota_update.c/h、新测试工具
-  - [x] 性能指标: ~1300行/9源文件、双OTA分区布局
-  - [x] 里程碑时间线: 增加 v1.1.0、v1.1.1
-- [x] CHANGELOG.md v1.1.1 条目
-- [x] RELEASE_NOTES.md 更新为 v1.1.1
-- [x] 固件版本号 1.1.0 → 1.1.1
+#### Day 20: v1.1.1 Documentation Refresh + Patch Release
+- [x] README.md / README_CN.md full update
+  - [x] Architecture diagram: single server → dual server (:80 + :8081)
+  - [x] Features table: added OTA, snapshot, unified dashboard, system info
+  - [x] API reference: added /api/snapshot, /api/ota, /api/ota/status
+  - [x] Project structure: added stream_server.c/h, ota_update.c/h, new test tools
+  - [x] Performance metrics: ~1300 lines / 9 source files, dual OTA partition layout
+  - [x] Milestone timeline: added v1.1.0, v1.1.1
+- [x] CHANGELOG.md v1.1.1 entry
+- [x] RELEASE_NOTES.md updated to v1.1.1
+- [x] Firmware version 1.1.0 → 1.1.1
 - [x] GitHub Release v1.1.1
 
 ---
 
-## v1.2.0 Release（Day 21）
+## v1.2.0 Release (Day 21)
 
-### Day 21: mDNS + Camera Settings API + 发布 v1.2.0
-- [x] mDNS 本地发现: `http://espcam.local/`
+### Day 21: mDNS + Camera Settings API + Release v1.2.0
+- [x] mDNS local discovery: `http://espcam.local/`
   - [x] espressif/mdns 1.11.0 managed component
-  - [x] Socket 网络模式 (CONFIG_MDNS_NETWORKING_SOCKET=y)
-  - [x] 修复: WiFi GOT_IP 事件竞争 → 手动 mdns_netif_action
-  - [x] 验证: ESP32 mDNS 响应器工作 (unicast 查询验证通过)
-  - [x] 注意: 多播发现依赖路由器允许 WiFi 客户端间多播
+  - [x] Socket networking mode (CONFIG_MDNS_NETWORKING_SOCKET=y)
+  - [x] Fix: WiFi GOT_IP event race → manual mdns_netif_action
+  - [x] Verified: ESP32 mDNS responder working (unicast query verified)
+  - [x] Note: multicast discovery requires router to allow WiFi client-to-client multicast
 - [x] Camera Settings API: GET/POST `/api/camera`
-  - [x] 支持: brightness, contrast, saturation, sharpness (-2~2)
-  - [x] 支持: hmirror, vflip (bool)
-  - [x] 部分 JSON 更新 (只发改动字段)
-  - [x] curl + 串口 + 浏览器全链路验证
-- [x] 前端: Camera Settings 面板 (可折叠)
+  - [x] Supports: brightness, contrast, saturation, sharpness (-2~2)
+  - [x] Supports: hmirror, vflip (bool)
+  - [x] Partial JSON updates (send only changed fields)
+  - [x] curl + serial + browser full chain verified
+- [x] Frontend: Camera Settings panel (collapsible)
   - [x] Range sliders + Checkboxes
-  - [x] 实时摄像头参数调节
-- [x] 固件版本号 1.1.1 → 1.2.0
-- [x] 上板验证: build ✅ flash ✅ serial ✅ curl ✅ browser ✅
-- [x] 截图: v1.2.0-dashboard.png, v1.2.0-tcp-stream.png
-- [x] CHANGELOG.md + RELEASE_NOTES.md 更新
+  - [x] Real-time camera parameter adjustment
+- [x] Firmware version 1.1.1 → 1.2.0
+- [x] Hardware verified: build ✅ flash ✅ serial ✅ curl ✅ browser ✅
+- [x] Screenshots: v1.2.0-dashboard.png, v1.2.0-tcp-stream.png
+- [x] CHANGELOG.md + RELEASE_NOTES.md updated
 - [x] GitHub Release v1.2.0
 
-### Day 22: 代码重构 + 单元测试覆盖
-- [x] 重构: 提取 FPS 计算器组件 (`components/fps_counter/`)
-  - [x] 纯结构体 API (fps_counter_t)，无全局变量
-  - [x] stream_server.c 和 ws_stream.c 消除重复代码
-- [x] 重构: 提取 JSON 响应辅助函数 (`main/http_helpers.c/h`)
-  - [x] http_send_json() 封装 5 处重复的 JSON 响应模式
-  - [x] http_server.c 减少 27 行代码
-- [x] 搭建 Unity 单元测试框架 (host-based)
+### Day 22: Code Refactoring + Unit Test Coverage
+- [x] Refactor: extract FPS counter component (`components/fps_counter/`)
+  - [x] Pure struct API (fps_counter_t), no global variables
+  - [x] Eliminated duplicate code in stream_server.c and ws_stream.c
+- [x] Refactor: extract JSON response helper (`main/http_helpers.c/h`)
+  - [x] http_send_json() wraps 5 repetitive JSON response patterns
+  - [x] http_server.c reduced by 27 lines
+- [x] Set up Unity unit test framework (host-based)
   - [x] test/CMakeLists.txt + mocks + redirect headers
-  - [x] Mac 上直接编译运行，无需 ESP32 硬件
-- [x] 编写核心模块单元测试: 20 tests, 0 failures
-  - [x] test_fps_counter (7 tests): 初始值、窗口、高帧率、重置
-  - [x] test_virtual_sensor (6 tests): 温度范围、随机值映射
-  - [x] test_led_controller (7 tests): GPIO mock、toggle、幂等性
-- [x] 上板验证: build ✅ flash ✅ serial ✅ browser ✅ (Patchright)
-- [x] Host 测试: ctest 20/20 pass
+  - [x] Compile and run directly on Mac, no ESP32 hardware needed
+- [x] Write core module unit tests: 20 tests, 0 failures
+  - [x] test_fps_counter (7 tests): initial values, window, high framerate, reset
+  - [x] test_virtual_sensor (6 tests): temperature range, random value mapping
+  - [x] test_led_controller (7 tests): GPIO mock, toggle, idempotency
+- [x] Hardware verified: build ✅ flash ✅ serial ✅ browser ✅ (Patchright)
+- [x] Host tests: ctest 20/20 pass
 
-### Day 23: SD 卡支持 (Phase 1: 基础读写)
-- [x] SD 卡驱动组件 (components/sd_card/)
-  - [x] 1-bit SDMMC 模式 (GPIO2/14/15)
-  - [x] VFS FAT 挂载到 /sdcard
-  - [x] 无卡时优雅降级 (非致命)
-  - [x] 启用 FATFS LFN 长文件名支持
-- [x] SD 卡 REST API (main/sd_handlers.c/h)
+### Day 23: SD Card Support (Phase 1: Basic Read/Write)
+- [x] SD card driver component (components/sd_card/)
+  - [x] 1-bit SDMMC mode (GPIO2/14/15)
+  - [x] VFS FAT mount to /sdcard
+  - [x] Graceful degradation when no card (non-fatal)
+  - [x] Enabled FATFS LFN long filename support
+- [x] SD Card REST API (main/sd_handlers.c/h)
   - [x] GET /api/sd/status, GET /api/sd/list
   - [x] POST /api/sd/capture, POST /api/sd/delete
-  - [x] GET /api/sd/file/* (通配符匹配)
-- [x] 前端 SD Card Storage 面板
-- [x] 上板验证: build 0 warnings, flash, serial, Patchright 8/8
-- [x] 单元测试回归: 20/20 pass
+  - [x] GET /api/sd/file/* (wildcard matching)
+- [x] Frontend SD Card Storage panel
+- [x] Hardware verified: build 0 warnings, flash, serial, Patchright 8/8
+- [x] Unit test regression: 20/20 pass
 
-### Day 24: v1.3.0 发布准备
-- [x] 版本号升级: 1.2.0 → 1.3.0
-- [x] CHANGELOG.md: v1.3.0 条目 (SD 卡 + 重构 + 单元测试)
-- [x] RELEASE_NOTES.md: 更新为 v1.3.0
-- [x] README.md / README_CN.md 全面更新
-  - [x] 功能表: 增加 SD 卡存储、单元测试
-  - [x] 架构图: 增加 sd_card 模块 + Micro SD 卡硬件
-  - [x] API 参考: 增加 6 个 SD 卡端点
-  - [x] 项目结构: 增加 sd_handlers、http_helpers、fps_counter、sd_card、test/
-  - [x] 性能指标: ~1600 行/13 源文件、20 单元测试
-  - [x] 里程碑时间线: 增加 Day 22 重构、v1.3.0
-- [x] TARGET.md 更新
-- [x] 编译验证: 0 warnings
-- [x] 单元测试: 20/20 pass
+### Day 24: v1.3.0 Release Preparation
+- [x] Version bump: 1.2.0 → 1.3.0
+- [x] CHANGELOG.md: v1.3.0 entry (SD card + refactoring + unit tests)
+- [x] RELEASE_NOTES.md: updated to v1.3.0
+- [x] README.md / README_CN.md full update
+  - [x] Features table: added SD card storage, unit tests
+  - [x] Architecture diagram: added sd_card module + Micro SD card hardware
+  - [x] API reference: added 6 SD card endpoints
+  - [x] Project structure: added sd_handlers, http_helpers, fps_counter, sd_card, test/
+  - [x] Performance metrics: ~1600 lines / 13 source files, 20 unit tests
+  - [x] Milestone timeline: added Day 22 refactoring, v1.3.0
+- [x] TARGET.md updated
+- [x] Build verified: 0 warnings
+- [x] Unit tests: 20/20 pass
 - [x] GitHub Release v1.3.0
 
 ### Day 25: GitHub Actions CI/CD Pipeline
-- [x] CI 工作流: `.github/workflows/ci.yml`
-  - [x] Unit Tests job: 下载 Unity → cmake → ctest (ubuntu-latest)
-  - [x] ESP-IDF Build job: espressif/idf:v5.5.1 容器构建
-  - [x] 固件产物上传 (30 天保留)
-- [x] 测试 CMakeLists.txt 改进: UNITY_DIR 可配置 (支持 CI/本地/ESP-IDF)
-- [x] README 双语添加 CI status badge
-- [x] 推送验证 CI 运行
+- [x] CI workflow: `.github/workflows/ci.yml`
+  - [x] Unit Tests job: download Unity → cmake → ctest (ubuntu-latest)
+  - [x] ESP-IDF Build job: espressif/idf:v5.5.1 container build
+  - [x] Firmware artifact upload (30-day retention)
+- [x] Test CMakeLists.txt improvement: UNITY_DIR configurable (supports CI/local/ESP-IDF)
+- [x] README bilingual CI status badge added
+- [x] Push verified CI run
 
-### Day 26: 代码重构 + 全链路上板验证
-- [x] 重构: 提取 `camera_handlers.c/h` 从 http_server.c
-  - [x] http_server.c: 281 → 213 行 (低于 250 阈值)
-  - [x] camera_handlers.c: 80 行 (GET/POST /api/camera)
-  - [x] camera_handlers_register() 模式复用 sd_handlers 方案
-- [x] 全链路上板验证
+### Day 26: Code Refactoring + Full Chain Hardware Verification
+- [x] Refactor: extract `camera_handlers.c/h` from http_server.c
+  - [x] http_server.c: 281 → 213 lines (below 250 threshold)
+  - [x] camera_handlers.c: 80 lines (GET/POST /api/camera)
+  - [x] camera_handlers_register() pattern reuses sd_handlers approach
+- [x] Full chain hardware verification
   - [x] Build: 0 warnings, 1.2MB (59% free)
   - [x] Flash: EXIT_0 via /dev/cu.wchusbserial110
-  - [x] Serial: WiFi + Camera + SD + HTTP + WS 全部启动
-  - [x] Browser (Patchright): 7/8 pass (含 /api/camera 回归)
-  - [x] curl: 全 API 200, MJPEG 236KB/3s
-- [x] 单元测试回归: 20/20 pass
+  - [x] Serial: WiFi + Camera + SD + HTTP + WS all started
+  - [x] Browser (Patchright): 7/8 pass (including /api/camera regression)
+  - [x] curl: all APIs 200, MJPEG 236KB/3s
+- [x] Unit test regression: 20/20 pass
 
-### Day 27: 路径遍历安全修复 + 测试覆盖扩展
-- [x] 安全修复: SD handlers 路径遍历漏洞
-  - [x] 新建 path_utils.c/h (path_is_safe + path_sanitize_sd)
-  - [x] sd_list, sd_file, sd_delete 全部应用路径验证
-  - [x] curl 验证: `?path=../../etc` → `{"error":"Invalid path"}`
-- [x] 重构: 拆分 sd_handlers.c (250→164 行)
-  - [x] 提取 sd_file_ops.c/h (capture + file serving, 123 行)
-  - [x] sd_file_ops_register() 模式复用 camera_handlers 方案
-- [x] 测试扩展: 20→43 tests (4 suites)
-  - [x] 新增 test_path_utils: 23 个路径安全测试
-  - [x] 覆盖: 正常路径、遍历攻击、缓冲区溢出、边界条件
-- [x] 全链路上板验证
+### Day 27: Path Traversal Security Fix + Test Coverage Expansion
+- [x] Security fix: SD handlers path traversal vulnerability
+  - [x] New path_utils.c/h (path_is_safe + path_sanitize_sd)
+  - [x] sd_list, sd_file, sd_delete all apply path validation
+  - [x] curl verified: `?path=../../etc` → `{"error":"Invalid path"}`
+- [x] Refactor: split sd_handlers.c (250→164 lines)
+  - [x] Extract sd_file_ops.c/h (capture + file serving, 123 lines)
+  - [x] sd_file_ops_register() pattern reuses camera_handlers approach
+- [x] Test expansion: 20→43 tests (4 suites)
+  - [x] New test_path_utils: 23 path security tests
+  - [x] Coverage: normal paths, traversal attacks, buffer overflow, edge cases
+- [x] Full chain hardware verification
   - [x] Build: 0 warnings, 1.2MB
-  - [x] Flash + Serial: 全部启动, 无 crash
-  - [x] Browser (Patchright): 9/9 pass (含路径遍历拦截)
+  - [x] Flash + Serial: all started, no crash
+  - [x] Browser (Patchright): 9/9 pass (including path traversal blocking)
   - [x] Unit Tests: 43/43 pass (4 suites)
 
-### Day 28: 系统诊断 API + HTTP 安全头 + 集成测试
-- [x] 新增 GET /api/system/info (chip, IDF, heap, PSRAM, uptime, tasks, WiFi, FPS)
+### Day 28: System Diagnostics API + HTTP Security Headers + Integration Tests
+- [x] New GET /api/system/info (chip, IDF, heap, PSRAM, uptime, tasks, WiFi, FPS)
   - [x] system_info.c/h (74 lines)
-  - [x] 独立模块 system_info_register() 模式
-- [x] HTTP 安全头: X-Content-Type-Options, X-Frame-Options, Cache-Control
-  - [x] http_send_json() 增强
-  - [x] 新增 http_send_html() helper
-  - [x] HTML handlers 改用集中化函数
-- [x] 集成测试脚本: test/integration/test_browser.py (15 tests)
-  - [x] 覆盖: Homepage, APIs, 安全头, LED, Snapshot, Camera, WS, 路径遍历
-- [x] 全链路上板验证
+  - [x] Independent module system_info_register() pattern
+- [x] HTTP security headers: X-Content-Type-Options, X-Frame-Options, Cache-Control
+  - [x] http_send_json() enhanced
+  - [x] New http_send_html() helper
+  - [x] HTML handlers switched to centralized function
+- [x] Integration test script: test/integration/test_browser.py (15 tests)
+  - [x] Coverage: Homepage, APIs, security headers, LED, Snapshot, Camera, WS, path traversal
+- [x] Full chain hardware verification
   - [x] Build: 0 warnings
   - [x] Flash + Serial: OK
   - [x] Browser (Patchright): 15/15 pass
   - [x] Unit Tests: 43/43 pass (4 suites)
 
 ### Day 29: v1.4.0 Release
-- [x] 前端增强: System Info 面板新增 chip/IDF/PSRAM/tasks
-- [x] 版本升级: v1.3.0 → v1.4.0
-- [x] CHANGELOG 更新: v1.4.0 完整 release notes
-- [x] 全链路上板验证
+- [x] Frontend enhancement: System Info panel added chip/IDF/PSRAM/tasks
+- [x] Version bump: v1.3.0 → v1.4.0
+- [x] CHANGELOG update: v1.4.0 full release notes
+- [x] Full chain hardware verification
   - [x] Build: 0 warnings
   - [x] Flash + Serial: OK, version 1.4.0
   - [x] Browser (Patchright): 18/18 pass
   - [x] Unit Tests: 43/43 pass (4 suites)
 
-### Day 30: JS 提取 + API Rate Limiting
-- [x] JavaScript 提取: index.html 299→132 行 (-56%), 创建 app.js (166 行)
-- [x] Rate Limiter: token bucket 限流 (OTA 3/60s, SD delete 10/60s)
-- [x] 单元测试: rate_limiter 套件 7 个测试
-- [x] 浏览器测试新增 7 个 (app.js + 面板填充), 总计 23/23
-- [x] 全链路上板验证
+### Day 30: JS Extraction + API Rate Limiting
+- [x] JavaScript extraction: index.html 299→132 lines (-56%), created app.js (166 lines)
+- [x] Rate Limiter: token bucket throttling (OTA 3/60s, SD delete 10/60s)
+- [x] Unit tests: rate_limiter suite 7 tests
+- [x] Browser tests added 7 (app.js + panel population), total 23/23
+- [x] Full chain hardware verification
   - [x] Build: 0 warnings
   - [x] Flash + Serial: OK
   - [x] Browser (Patchright): 23/23 pass
   - [x] Unit Tests: 50/50 pass (5 suites)
 
-### Day 31: 稳定性加固 (发布冲刺 1/3)
-- [x] Task Watchdog: 30s 超时, panic 模式自动重启
-- [x] 堆完整性监控: 30s 周期检查 + 低内存警告
-- [x] 健康 API: /api/system/info 新增 health 段 (heap_ok, memory_ok, wdt)
-- [x] 错误处理: cJSON OOM 保护 (http_send_json, status, system_info)
-- [x] app.js 可靠性: 延迟 MJPEG 加载, 防连接过载
-- [x] 全链路上板验证
+### Day 31: Stability Hardening (Release Sprint 1/3)
+- [x] Task Watchdog: 30s timeout, panic mode auto-reboot
+- [x] Heap integrity monitoring: 30s periodic checks + low memory warnings
+- [x] Health API: /api/system/info added health section (heap_ok, memory_ok, wdt)
+- [x] Error handling: cJSON OOM protection (http_send_json, status, system_info)
+- [x] app.js reliability: deferred MJPEG loading, prevent connection overload
+- [x] Full chain hardware verification
   - [x] Build: 0 warnings
   - [x] Flash × 3 cycles: OK
   - [x] Browser (Patchright): 26/26 pass
   - [x] Unit Tests: 50/50 pass (5 suites)
 
-### Day 32: 测试加固 + 文档 (发布冲刺 2/3)
-- [x] 浏览器集成测试: 26 → 39 (新增 13 个测试)
+### Day 32: Test Hardening + Documentation (Release Sprint 2/3)
+- [x] Browser integration tests: 26 → 39 (added 13 tests)
   - [x] OTA status, SD status/list, MJPEG stream headers
   - [x] Camera POST (set + restore), LED on/off cycle, LED bad JSON
   - [x] 404 unknown route, Status version/WiFi/RSSI, CORS header
-  - [x] MJPEG 并发连接处理 (navigate away + curl 验证)
-- [x] API 文档: 创建 docs/API.md (20 个端点完整文档)
-- [x] README 更新: v2.0.0 特性列表, 项目结构, 里程碑时间线
-- [x] 全链路上板验证
-  - [x] Build: 无需重新编译 (纯测试+文档)
+  - [x] MJPEG concurrent connection handling (navigate away + curl verify)
+- [x] API documentation: created docs/API.md (20 endpoints fully documented)
+- [x] README update: v2.0.0 feature list, project structure, milestone timeline
+- [x] Full chain hardware verification
+  - [x] Build: no recompile needed (tests + docs only)
   - [x] Browser (Patchright): 39/39 pass
   - [x] Unit Tests: 50/50 pass (5 suites)
 
 ### Day 33 — v2.0.0 Release Day 🏆
 
-- [x] Pre-release 回归测试
+- [x] Pre-release regression test
   - [x] Unit tests: 50/50 (5 suites)
   - [x] Browser tests: 39/39 (Patchright)
-  - [x] 硬件健康: heap_ok, memory_ok, WDT active
+  - [x] Hardware health: heap_ok, memory_ok, WDT active
 - [x] Version bump: 1.4.0 → 2.0.0
-- [x] CHANGELOG.md: v2.0.0 全面发布说明
-- [x] RELEASE_NOTES.md: 更新为 v2.0.0
-- [x] Build → Flash → 验证
-  - [x] 编译: 0 warnings, ~1.29 MB
-  - [x] 烧录: CH340 串口成功
-  - [x] 版本确认: /api/status → version: 2.0.0
-  - [x] 烧录后回归: 39/39 browser tests ✅
+- [x] CHANGELOG.md: v2.0.0 full release notes
+- [x] RELEASE_NOTES.md: updated to v2.0.0
+- [x] Build → Flash → Verify
+  - [x] Compile: 0 warnings, ~1.29 MB
+  - [x] Flash: CH340 serial successful
+  - [x] Version confirmed: /api/status → version: 2.0.0
+  - [x] Post-flash regression: 39/39 browser tests ✅
 - [x] Git tag v2.0.0 + push
 
 ### Day 34 — Public Release Day 🚀
 
-- [x] 硬件验证: v2.0.0 在线, 串口启动日志确认
-- [x] Release 截图: 4 张 (homepage, WS stream, system info, mobile)
-- [x] GitHub Release: v2.0.0 发布, 包含固件 + 截图
+- [x] Hardware verification: v2.0.0 online, serial boot log confirmed
+- [x] Release screenshots: 4 images (homepage, WS stream, system info, mobile)
+- [x] GitHub Release: v2.0.0 published, includes firmware + screenshots
   - URL: https://github.com/chinawrj/Autopilot-ESP32-CAM/releases/tag/v2.0.0
-- [x] 每日日志 + commit + push
+- [x] Daily log + commit + push

@@ -3,31 +3,31 @@ name: esp32-serial-tools
 description: "ESP32 serial communication and log monitoring: UART, log parsing, pattern matching. Use when: reading serial output, parsing ESP32 logs, debugging boot issues."
 ---
 
-# Skill: ESP32 串口工具
+# Skill: ESP32 Serial Tools
 
-## 用途
+## Purpose
 
-管理 ESP32 设备的串口通信，包括日志监控、数据解析、异常检测。
+Manage serial communication with ESP32 devices, including log monitoring, data parsing, and error detection.
 
-**何时使用：**
-- 需要监控 ESP32 设备的串口输出
-- 需要解析串口日志中的关键信息
-- 需要检测运行时错误（panic, assert, watchdog）
-- 需要通过串口发送命令到设备
+**When to use:**
+- Need to monitor serial output from an ESP32 device
+- Need to parse key information from serial logs
+- Need to detect runtime errors (panic, assert, watchdog)
+- Need to send commands to the device via serial
 
-**何时不使用：**
-- 不涉及串口通信的项目
-- 仅需要 Web 接口交互的场景
+**When not to use:**
+- Projects that don't involve serial communication
+- Scenarios that only require web interface interaction
 
-## 前置条件
+## Prerequisites
 
-- ESP-IDF 已安装并配置环境变量
-- USB 串口驱动已安装（CP2102/CH340）
-- 设备已通过 USB 连接
+- ESP-IDF installed with environment variables configured
+- USB serial driver installed (CP2102/CH340)
+- Device connected via USB
 
-## 操作步骤
+## Steps
 
-### 1. 识别串口设备
+### 1. Identify Serial Device
 
 ```bash
 # macOS
@@ -36,52 +36,52 @@ ls /dev/tty.usb* /dev/cu.usb* 2>/dev/null
 # Linux
 ls /dev/ttyUSB* /dev/ttyACM* 2>/dev/null
 
-# 通常结果：/dev/ttyUSB0 或 /dev/cu.usbserial-xxx
+# Typical result: /dev/ttyUSB0 or /dev/cu.usbserial-xxx
 ```
 
-### 2. 启动串口监控
+### 2. Start Serial Monitor
 
 ```bash
-# 方式一：使用 idf.py monitor（推荐）
+# Method 1: Use idf.py monitor (recommended)
 idf.py -p /dev/ttyUSB0 monitor
 
-# 方式二：使用 minicom
+# Method 2: Use minicom
 minicom -D /dev/ttyUSB0 -b 115200
 
-# 方式三：使用 screen
+# Method 3: Use screen
 screen /dev/ttyUSB0 115200
 ```
 
-### 3. 日志捕获与分析
+### 3. Log Capture and Analysis
 
-在 tmux 环境中，可以自动捕获和分析日志：
+In a tmux environment, you can automatically capture and analyze logs:
 
 ```bash
-# 捕获 monitor 窗口的最新输出
+# Capture latest output from monitor window
 tmux capture-pane -t {{PROJECT_NAME}}:monitor -p | tail -50
 
-# 检查是否有错误
+# Check for errors
 tmux capture-pane -t {{PROJECT_NAME}}:monitor -p | grep -iE "(error|panic|assert|abort|watchdog)"
 
-# 检查 WiFi 连接状态
+# Check WiFi connection status
 tmux capture-pane -t {{PROJECT_NAME}}:monitor -p | grep -iE "(wifi|connected|ip addr|got ip)"
 
-# 检查 HTTP 服务器状态
+# Check HTTP server status
 tmux capture-pane -t {{PROJECT_NAME}}:monitor -p | grep -iE "(httpd|server|listening|port)"
 ```
 
-### 4. 常见日志模式识别
+### 4. Common Log Pattern Recognition
 
-| 日志模式 | 含义 | 处理方式 |
+| Log Pattern | Meaning | How to Handle |
 |---------|------|---------|
-| `Guru Meditation Error` | CPU 异常（panic） | 检查 backtrace，定位崩溃代码 |
-| `Task watchdog got triggered` | 任务看门狗超时 | 检查是否有死循环或阻塞 |
-| `Wi-Fi connected` | WiFi 已连接 | 正常，记录 IP 地址 |
-| `httpd_start: Started` | HTTP 服务已启动 | 检查端口号 |
-| `cam_hal: cam_dma_config` | 摄像头初始化 | 检查分辨率和帧率 |
-| `ENOMEM` / `alloc failed` | 内存不足 | 降低分辨率或减少缓冲区 |
+| `Guru Meditation Error` | CPU exception (panic) | Check backtrace, locate crashing code |
+| `Task watchdog got triggered` | Task watchdog timeout | Check for infinite loops or blocking |
+| `Wi-Fi connected` | WiFi connected | Normal, note the IP address |
+| `httpd_start: Started` | HTTP server started | Check port number |
+| `cam_hal: cam_dma_config` | Camera initialization | Check resolution and frame rate |
+| `ENOMEM` / `alloc failed` | Out of memory | Lower resolution or reduce buffers |
 
-### 5. 串口数据提取脚本
+### 5. Serial Data Extraction Script
 
 ```python
 import serial
@@ -89,7 +89,7 @@ import re
 import time
 
 def monitor_serial(port="/dev/ttyUSB0", baudrate=115200, timeout=30):
-    """监控串口输出，提取关键信息"""
+    """Monitor serial output and extract key information"""
     results = {
         "ip_address": None,
         "errors": [],
@@ -105,20 +105,20 @@ def monitor_serial(port="/dev/ttyUSB0", baudrate=115200, timeout=30):
         if not line:
             continue
 
-        # 提取 IP 地址
+        # Extract IP address
         ip_match = re.search(r"got ip:(\d+\.\d+\.\d+\.\d+)", line)
         if ip_match:
             results["ip_address"] = ip_match.group(1)
 
-        # 检查 WiFi 连接
+        # Check WiFi connection
         if "wifi connected" in line.lower() or "sta_connected" in line.lower():
             results["wifi_connected"] = True
 
-        # 检查 HTTP 服务
+        # Check HTTP service
         if "httpd" in line.lower() and "start" in line.lower():
             results["http_started"] = True
 
-        # 收集错误
+        # Collect errors
         if re.search(r"error|panic|assert|abort", line, re.IGNORECASE):
             results["errors"].append(line)
 
@@ -126,28 +126,28 @@ def monitor_serial(port="/dev/ttyUSB0", baudrate=115200, timeout=30):
     return results
 ```
 
-## Self-Test（自检）
+## Self-Test
 
-> 验证串口工具和 Python 串口库可用。
+> Verify that serial tools and the Python serial library are available.
 
-### 自检步骤
+### Self-Test Steps
 
 ```bash
-# Test 1: pyserial 可导入
+# Test 1: pyserial importable
 python3 -c "import serial; print('SELF_TEST_PASS: pyserial')" 2>/dev/null || echo "SELF_TEST_FAIL: pyserial"
 
-# Test 2: 串口设备检测
+# Test 2: Serial device detection
 PORTS=$(ls /dev/tty.usb* /dev/cu.usb* /dev/ttyUSB* /dev/ttyACM* 2>/dev/null)
 if [ -n "$PORTS" ]; then
     echo "SELF_TEST_PASS: serial_device ($PORTS)"
 else
-    echo "SELF_TEST_WARN: serial_device (无设备连接，需要硬件）"
+    echo "SELF_TEST_WARN: serial_device (no device connected, hardware required)"
 fi
 
-# Test 3: idf.py monitor 命令存在（需要 ESP-IDF 环境）
-command -v idf.py &>/dev/null && echo "SELF_TEST_PASS: idf_monitor" || echo "SELF_TEST_WARN: idf_monitor (ESP-IDF 未加载)"
+# Test 3: idf.py monitor command exists (requires ESP-IDF environment)
+command -v idf.py &>/dev/null && echo "SELF_TEST_PASS: idf_monitor" || echo "SELF_TEST_WARN: idf_monitor (ESP-IDF not loaded)"
 
-# Test 4: 日志模式匹配逻辑验证
+# Test 4: Log pattern matching logic validation
 python3 -c "
 import re
 test_lines = [
@@ -164,38 +164,38 @@ print('SELF_TEST_PASS: pattern_matching')
 " || echo "SELF_TEST_FAIL: pattern_matching"
 ```
 
-### 预期结果
+### Expected Results
 
-| 测试项 | 预期输出 | 失败影响 |
+| Test Item | Expected Output | Failure Impact |
 |--------|---------|----------|
-| pyserial | `SELF_TEST_PASS` | Python 串口脚本不可用 |
-| serial_device | `SELF_TEST_PASS/WARN` | 需要连接硬件 |
-| idf_monitor | `SELF_TEST_PASS/WARN` | 可用 minicom 替代 |
-| pattern_matching | `SELF_TEST_PASS` | 日志分析功能异常 |
+| pyserial | `SELF_TEST_PASS` | Python serial scripts unavailable |
+| serial_device | `SELF_TEST_PASS/WARN` | Hardware connection required |
+| idf_monitor | `SELF_TEST_PASS/WARN` | Can use minicom as alternative |
+| pattern_matching | `SELF_TEST_PASS` | Log analysis functionality broken |
 
-### Blind Test（盲测）
+### Blind Test
 
-**测试 Prompt:**
+**Test Prompt:**
 ```
-你是一个 AI 开发助手。请阅读此 Skill，然后：
-1. 检查当前系统是否有串口设备连接
-2. 编写一个 Python 脚本，解析以下模拟串口输出并提取关键信息：
+You are an AI development assistant. Please read this Skill, then:
+1. Check if any serial devices are connected to the current system
+2. Write a Python script that parses the following simulated serial output and extracts key information:
    - "I (1000) wifi: connected to ap SSID:MyWiFi"
    - "I (2000) wifi: got ip:192.168.1.50"
    - "I (3000) httpd: httpd_start: Started on port 80"
    - "E (4000) cam: cam_hal: failed to init"
-3. 输出提取到的 IP 地址、WiFi 状态、HTTP 状态和错误列表
+3. Output the extracted IP address, WiFi status, HTTP status, and error list
 ```
 
-**验收标准:**
-- [ ] Agent 正确使用 Skill 中的正则模式
-- [ ] Agent 提取到 IP: 192.168.1.50
-- [ ] Agent 识别到 cam_hal 错误
-- [ ] Agent 没有遗漏 httpd 启动信息
+**Acceptance Criteria:**
+- [ ] Agent correctly uses regex patterns from the Skill
+- [ ] Agent extracts IP: 192.168.1.50
+- [ ] Agent identifies the cam_hal error
+- [ ] Agent does not miss the httpd startup information
 
-## 成功标准
+## Success Criteria
 
-- [ ] 能正确识别并连接串口设备
-- [ ] 串口日志实时输出可见
-- [ ] 能自动检测常见错误模式
-- [ ] 能提取关键信息（IP 地址、服务状态等）
+- [ ] Can correctly identify and connect to serial devices
+- [ ] Serial log output is visible in real time
+- [ ] Can automatically detect common error patterns
+- [ ] Can extract key information (IP address, service status, etc.)

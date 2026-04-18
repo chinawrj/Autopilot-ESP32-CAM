@@ -1,6 +1,6 @@
 #!/bin/bash
 # self-test for web-page-inspector
-# 运行: bash .github/skills/web-page-inspector/self-test.sh
+# Run: bash .github/skills/web-page-inspector/self-test.sh
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$SCRIPT_DIR/../_common/detect-python.sh"
@@ -16,12 +16,12 @@ skip_case() { echo "SELF_TEST_SKIP: $1 ($2)"; SKIP=$((SKIP + 1)); }
 # --- Detect Python with patchright ---
 PYTHON=$(detect_python "patchright.sync_api")
 if [ -z "$PYTHON" ]; then
-  skip_case "patchright_import" "patchright 未找到，设置 PATCHRIGHT_PYTHON 或 pip install patchright"
+  skip_case "patchright_import" "patchright not found, set PATCHRIGHT_PYTHON or pip install patchright"
   echo ""; echo "Results: $PASS passed, $FAIL failed, $SKIP skipped"; exit $FAIL
 fi
 test_pass "patchright_import ($PYTHON)"
 
-# --- Test 2: 页面表格数据提取 ---
+# --- Test 2: Page table data extraction ---
 if $PYTHON -c "
 from patchright.sync_api import sync_playwright
 import os
@@ -29,7 +29,7 @@ pw = sync_playwright().start()
 ctx = pw.chromium.launch_persistent_context(
     user_data_dir=os.path.expanduser('~/.patchright-userdata/selftest'),
     channel='chrome',
-    headless=False,  # ⛔ 禁止 headless
+    headless=False,  # ⛔ headless forbidden
     no_viewport=True,
 )
 page = ctx.pages[0] if ctx.pages else ctx.new_page()
@@ -47,7 +47,7 @@ else
   test_fail "page_data_extraction"
 fi
 
-# --- Test 3: CSS 选择器查询 ---
+# --- Test 3: CSS selector query ---
 if $PYTHON -c "
 from patchright.sync_api import sync_playwright
 import os
@@ -55,7 +55,7 @@ pw = sync_playwright().start()
 ctx = pw.chromium.launch_persistent_context(
     user_data_dir=os.path.expanduser('~/.patchright-userdata/selftest'),
     channel='chrome',
-    headless=False,  # ⛔ 禁止 headless
+    headless=False,  # ⛔ headless forbidden
     no_viewport=True,
 )
 page = ctx.pages[0] if ctx.pages else ctx.new_page()
@@ -72,7 +72,7 @@ else
   test_fail "css_selector_query"
 fi
 
-# --- Test 4: JavaScript 执行提取动态数据 ---
+# --- Test 4: JavaScript execution to extract dynamic data ---
 if $PYTHON -c "
 from patchright.sync_api import sync_playwright
 import os
@@ -80,7 +80,7 @@ pw = sync_playwright().start()
 ctx = pw.chromium.launch_persistent_context(
     user_data_dir=os.path.expanduser('~/.patchright-userdata/selftest'),
     channel='chrome',
-    headless=False,  # ⛔ 禁止 headless
+    headless=False,  # ⛔ headless forbidden
     no_viewport=True,
 )
 page = ctx.pages[0] if ctx.pages else ctx.new_page()
@@ -97,7 +97,7 @@ else
   test_fail "js_dynamic_extract"
 fi
 
-# --- 汇总 ---
+# --- Summary ---
 echo ""
 echo "Results: $PASS passed, $FAIL failed, $SKIP skipped"
 exit $FAIL
